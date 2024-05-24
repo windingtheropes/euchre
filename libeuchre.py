@@ -11,11 +11,27 @@ class EuchrePlayer(Player):
         self.team = 0;
         self.dealer = False;
         self.controlled = controlled;
+class EuchreDeck(Deck):
+    def __init__(self, cards, suits):
+        Deck.__init__(self, cards, suits)
+                
+    # dump the remainder of the deck into a hand        
+    def dump(self, hand: Hand):
+        for card in self.cards:
+            if not card.id in self.dealt:
+                hand.add_card(card)     
+                self.dealt.append(card.id)
+                
+class RoundResult:
+    def __init__(self, winning_team, points):
+        self.winning_team = winning_team
+        self.points = points 
         
 # euchre base game class
 class Game:
     def __init__(self):
-        self.deck = Deck(cards=[1,9,10,11,12,13])
+        self.deck = EuchreDeck(cards=[1,9,10,11,12,13])
+        self.scores = [0,0]
         self.players = []
         
         print("Euchre by Jack Anderson")
@@ -44,42 +60,60 @@ class Game:
             
             sleep(1)
             clear()
-               
-    def start():
+    # check if there's a winning team
+    def check_win(self):
+        for i in range(0,len(self.scores)):
+            score = self.scores[i]
+            if score >= 10:
+                return [True, i]
+        return [False]       
+     
+    def start(self):
         # start the game
-        
-        pass
-        
+        i = 0
+        while not self.check_win()[0]:
+            fi = indexf(i)
+            dealer = self.players[fi]
+            round = Round(self.deck, players=self.players, dealer=dealer)
+            res = round.run()
+            i+=1
+        print(f"Team {self.check_win()[1]} wins.")
 
 # euchre trick round class, handles a round of tricks, selecting trump, etc
 class Trick_Round():
     def __init__(self, deck, dealer, players):
         self.deck = deck
         self.dealer = dealer
-        self.players = players
         
         # starting player
         self.starti = indexOf(dealer, self.plyers) + 1
         
         self.center = Hand()
-        self.kiddy = Hand()
-        self.trump
-        self.caller
-        self.caller_alone = False
         
-    def deal_cards():
-        for i in range(0,5):
-            ind = indexf()
-        pass
         
 
 # euchre round class, handles 5 rounds of tricks
 class Round:
     # info pertaining to the euchre round
-    def __init__(self, deck):
+    def __init__(self, deck: EuchreDeck, players):
+        self.players = players
         self.deck = deck
         self.trick_scores = [0,0]
+        self.kiddy = Hand()
+        self.trump
+        self.caller
+        self.caller_alone = False 
         pass
+    # deal 5 cards to each player
+    def deal_cards(self):
+        for a in range(0,5):
+            for i in range(0,len(self.players)):
+                ind = indexf(self.starti+i)
+                player = self.players[ind]
+                self.deck.deal_to(player);
+        
     def run(self):
+        # team then score
+        self.deal_cards();
         pass
 

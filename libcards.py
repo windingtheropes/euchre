@@ -3,6 +3,12 @@
 
 from helpers import generate_id, log, urand
 
+# Player base class, contains a hand
+class Player:
+    def __init__(self, name):
+        self.name = name
+        self.id = generate_id()
+        self.hand = Hand()
 # Card class, contains a card number, a suit, and a unique id
 class Card:
     def __init__(self, card, suit, visible=False):
@@ -55,15 +61,26 @@ class Deck:
         for s in suits:
             for c in cards:
                 self.cards.append(Card(c, s))
-    
+                
     # pull a card from the top of the undealt deck
     def deal(self):
+        if len(self.dealt) == len(self.cards):
+            return print("Deck is out of cards")
         for card in self.cards:
             if card.id in self.dealt:
                 continue
             else:
                 self.dealt.append(card.id)
                 return card
+
+    # deal a card to a player
+    def deal_to(self, plr: Player):
+        card = self.deal()
+        if not card:
+            return print("No card.")
+        plr.hand.add_card(card)
+        return card
+        
             
     # deal a card to any instance of a hand. return the card which was dealt.
     def deal_to(self, hand: Hand):
@@ -81,11 +98,6 @@ class Deck:
             newdeck.append(self.cards[r])
         self.cards = newdeck
         
-# Player base class, contains a hand
-class Player:
-    def __init__(self, name):
-        self.name = name
-        self.id = generate_id()
-        self.hand = Hand()
+
     
 
