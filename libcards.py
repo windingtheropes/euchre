@@ -1,7 +1,7 @@
 # libcards by Jack Anderson
 # a python library for card games.
 
-from libhelpers import generate_id, log, urand
+from helpers import generate_id, log, urand
 
 # Card class, contains a card number, a suit, and a unique id
 class Card:

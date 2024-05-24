@@ -3,7 +3,41 @@
 import random
 import time
 import math
+from os import system, name
 
+# clear screen for both platforms, windows nt uses cls, unix uses clear
+def clear():
+    if name == "nt":
+        system("cls")
+    else:
+        system("clear")
+ 
+# take a number as input, make sure it fits inside the index of arr given
+def indexf(ind, arr):
+    maxi = len(arr)-1
+    if ind > maxi:
+        return indexf((ind-maxi)-1, arr)
+    else:
+        return ind
+# safe indexof, find obj in arr
+def indexOf(obj, arr):
+    if obj in arr:
+        return arr.index(obj)
+    else:
+        return -1     
+      
+# forced non empty string input
+def sinput(prompt):
+    i = str(input(prompt))
+    if i == "":
+        return sinput(prompt)
+    return i
+
+def flip(bit):
+    if bit == 1:
+        return 0
+    else:
+        return 1
 # forced input takes a list of options that must match, or rerun input
 def finput(prompt, options):
     # ensure options are all lowercase
