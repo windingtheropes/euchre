@@ -20,6 +20,7 @@ class Game:
         for i in range(1,5):
             controlled = finput(f"Will player {i} be manually controlled? (y/n) ", ['y','n']) == 'y'
             if controlled:
+                pass
             
     def start():
         # start the game
