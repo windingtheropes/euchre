@@ -3,6 +3,18 @@
 
 from helpers import generate_id, log, urand
 
+# suits
+Clubs = 1
+Diamonds = 2
+Hearts = 3
+Spades = 4
+
+# face cards
+Jack = 11
+Queen = 12
+King = 13
+Ace = 1
+
 # Player base class, contains a hand
 class Player:
     def __init__(self, name):
@@ -53,7 +65,7 @@ class Hand:
 
 # Deck class, contains an array 
 class Deck:
-    def __init__(self, cards=[1,2,3,4,5,6,7,8,9,10,11,12,13], suits=[1,2,3,4]):
+    def __init__(self, cards=[Ace,2,3,4,5,6,7,8,9,10,Jack,Queen,King], suits=[Clubs,Diamonds,Hearts,Spades]):
         self.cards = []
         self.dealt = []
 

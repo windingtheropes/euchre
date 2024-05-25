@@ -39,7 +39,7 @@ def flip(bit):
     else:
         return 1
 # forced input takes a list of options that must match, or rerun input
-def finput(prompt, options):
+def finput(prompt, options): 
     # ensure options are all lowercase
     o = []
     for opt in options:
