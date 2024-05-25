@@ -72,21 +72,9 @@ class Deck:
             else:
                 self.dealt.append(card.id)
                 return card
-
-    # deal a card to a player
-    def deal_to(self, plr: Player):
-        card = self.deal()
-        if not card:
-            return print("No card.")
-        plr.hand.add_card(card)
-        return card
-        
-            
-    # deal a card to any instance of a hand. return the card which was dealt.
-    def deal_to(self, hand: Hand):
-        card = self.deal()
-        hand.add_card(card)
-        return card        
+    # return all cards to the deck (clear self.dealt)
+    def relinquish(self):    
+        self.dealt = []
     
     # shuffle the deck
     def shuffle(self):
