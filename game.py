@@ -4,4 +4,4 @@ from libeuchre import Game
 
 g = Game()
 g.config_players()
-
+g.start()
