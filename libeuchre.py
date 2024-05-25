@@ -11,8 +11,9 @@ class EuchrePlayer(Player):
         self.team = 0;
         self.dealer = False;
         self.controlled = controlled;
+
 class EuchreDeck(Deck):
-    def __init__(self, cards, suits):
+    def __init__(self, cards=[1,2,3,4,5,6,7,8,9,10,11,12,13], suits=[1,2,3,4]):
         Deck.__init__(self, cards, suits)
                 
     # dump the remainder of the deck into a hand        
@@ -21,7 +22,7 @@ class EuchreDeck(Deck):
             if not card.id in self.dealt:
                 hand.add_card(card)     
                 self.dealt.append(card.id)
-                
+             
 class RoundResult:
     def __init__(self, winning_team, points):
         self.winning_team = winning_team
@@ -36,8 +37,7 @@ class Game:
         
         print("Euchre by Jack Anderson")
         
-        sleep(1)
-        clear()
+        
         
     # configure player names, teams, control
     def config_players(self):
@@ -58,8 +58,7 @@ class Game:
             # flip 0 to 1 or 1 to 0
             team = flip(team)
             
-            sleep(1)
-            clear()
+            
     # check if there's a winning team
     def check_win(self):
         for i in range(0,len(self.scores)):
@@ -70,14 +69,14 @@ class Game:
      
     def start(self):
         # start the game
-        i = 0
-        while not self.check_win()[0]:
-            fi = indexf(i)
-            dealer = self.players[fi]
-            round = Round(self.deck, players=self.players, dealer=dealer)
-            res = round.run()
-            i+=1
-        print(f"Team {self.check_win()[1]} wins.")
+        # i = 0
+        # while not self.check_win()[0]:
+        fi = indexf(0, self.players)
+        dealer = self.players[fi]
+        round = Round(deck=self.deck, players=self.players, dealer=dealer)
+        res = round.run()
+        # i+=1
+        # print(f"Team {self.check_win()[1]} wins.")
 
 # euchre trick round class, handles a round of tricks, selecting trump, etc
 class Trick_Round():
@@ -95,25 +94,57 @@ class Trick_Round():
 # euchre round class, handles 5 rounds of tricks
 class Round:
     # info pertaining to the euchre round
-    def __init__(self, deck: EuchreDeck, players):
+    def __init__(self, deck: EuchreDeck, players, dealer: EuchrePlayer):
         self.players = players
         self.deck = deck
-        self.trick_scores = [0,0]
         self.kiddy = Hand()
-        self.trump
-        self.caller
+        self.dealer = dealer
+        self.starti = indexOf(self.dealer, self.players)+1
+        self.trick_scores = [0,0]
+        self.trump = None;
+        self.caller = None;
         self.caller_alone = False 
-        pass
+        
     # deal 5 cards to each player
     def deal_cards(self):
         for a in range(0,5):
+            # start at player next to the dealer
             for i in range(0,len(self.players)):
-                ind = indexf(self.starti+i)
-                player = self.players[ind]
-                self.deck.deal_to(player);
-        
-    def run(self):
-        # team then score
+                ind = indexf(self.starti+i, self.players)
+                player: EuchrePlayer = self.players[ind]
+                player.hand.add_card(self.deck.deal())
+                
+    def deal(self):
+        # deal cards to players
         self.deal_cards();
+        # add remainder of cards to kiddy
+        self.deck.dump(self.kiddy)
+        # turn up first card of kiddy
+        self.kiddy.cards[0].visible = True  
+        print(f"The top card of the kiddy is {self.kiddy.cards[0].format()}")
+        
+    # call to pick up or pass
+    def preround1(self):
+        # start at player next to the dealer
+        for i in range(0,len(self.players)):
+            ind = indexf(self.starti+i, self.players)
+            player = self.players[ind]
+    
+    # call trump or pass
+    def preround2(self):
+        # start at player next to the dealer
+        for i in range(0,len(self.players)):
+            ind = indexf(self.starti+i, self.players)
+            player = self.players[ind]
+         
+    # postround: clear hands and clear the deck
+    def postround(self):
+        for plr in self.players:
+            plr.hand.clear()
+        self.kiddy.clear()
+        self.deck.relinquish()
         pass
+    def run(self):
+        self.deal()
+        self.preround1()
 
