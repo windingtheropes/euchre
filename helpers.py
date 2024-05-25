@@ -11,7 +11,7 @@ def clear():
         system("cls")
     else:
         system("clear")
- 
+
 # take a number as input, make sure it fits inside the index of arr given
 def indexf(ind, arr):
     maxi = len(arr)-1
