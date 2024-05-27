@@ -17,6 +17,10 @@ class PreRound2_Result:
         self.suit = suit
         self.alone = alone
         pass
+class CardBundle:
+    def __init__(self, cards):
+        self.cards = cards
+        
 class EuchrePlayer(Player):
     def __init__(self, name, controlled=False):
         Player.__init__(self, name);
@@ -79,17 +83,27 @@ class EuchrePlayer(Player):
                 return PreRound2_Result(False)
     
     # GAME FUNCTION
-    def play_trick(self, lead):
+    def play_trick(self, lead=None):
         print("Here are your cards:")
-        for card in self.cards:
-            print(card.format())
-        
-        if not lead:
+        self.hand.display()    
+        if lead == None:
             # This player is going first
-            pass
+            c = int(finput(f"Select a card to lay down (0-${len(self.cards)-1})"), range(0, len(self.cards)))
+            card = self.cards[c]
+            return CardBundle([card])
         else:
             suit = lead.suit
-            # must follow suit               
+            cardsofsuit = Hand(self.hand.find_suit(suit))
+            if(len(cardsofsuit) > 0):
+                print("must follow suit.")
+                cardsofsuit.display()
+                c = int(finput(f"Select a card to lay down (0-${len(cardsofsuit.cards)-1})"), range(0, len(cardsofsuit.cards)))
+                card = cardsofsuit[c]
+                return CardBundle([card])
+            else:
+                c = int(finput(f"Select a card to lay down (0-${len(self.cards)-1})"), range(0, len(self.cards)))
+                card = self.cards[c]
+                return CardBundle([card])
 class EuchreDeck(Deck):
     def __init__(self, cards=[Ace,2,3,4,5,6,7,8,9,10,Jack,Queen,King], suits=[Clubs,Diamonds,Hearts,Spades]):
         Deck.__init__(self, cards, suits)
@@ -168,7 +182,7 @@ class Trick(Hand):
         self.players = players
         # should be an index
         self.lead_index = lead_index
-    def play_trick(self):
+    def run_trick(self):
         # loop through 4 players
         for i in range(0,4):
             ind = indexf(self.lead_index+i, self.players)
@@ -228,12 +242,12 @@ class Round:
         print(f"The top card of the kiddy is {self.kiddy.cards[0].format()}")
         
     # call to pick up or pass
-    def preround1(self):
+    def preround(self):
         # start at player next to the dealer
         for i in range(0,len(self.players)):
             ind = indexf(self.start_index+i, self.players)
             player = self.players[ind]
-            result: PreRound1_Result = player.preround1(self.kiddy.cards[0], self.dealer)
+            result: PreRound1_Result = player.preround_pickup(self.kiddy.cards[0], self.dealer)
             if(result.call == True):
                 self.trump = self.kiddy.cards[0].suit
                 self.caller = player
@@ -248,7 +262,7 @@ class Round:
         for i in range(0,len(self.players)):
             ind = indexf(self.start_index+i, self.players)
             player = self.players[ind]
-            result: PreRound2_Result = player.preround2(self.kiddy.cards[0], self.dealer)
+            result: PreRound2_Result = player.preround_call_trump(self.kiddy.cards[0], self.dealer)
             if(result.call == True):
                 self.trump = result.suit
                 self.caller = player
@@ -259,9 +273,7 @@ class Round:
         # loop through 5 hands
         for i in range(1,6):
             winner = Trick(self.trump, self.players, self.start_index)
-            pass
-        # winner = Trick(trump).play(starti)
-        # winner = Trick(trump).play(indexof(winner, players))        
+            pass      
         pass
     # postround: clear hands and clear the deck
     def postround(self):
@@ -275,6 +287,6 @@ class Round:
         self.deck.shuffle()
         self.deal()
         
-        self.preround1()
+        self.preround()
         self.playround()
         
