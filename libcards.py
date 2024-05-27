@@ -69,6 +69,10 @@ class Hand:
             log("Card not in hand. Not removed.")
         else:
             self.cards.remove(card)
+    # move a card to another hand (after dealing)
+    def move_card(self, card, hand):
+        hand.add_card(card)
+        self.remove_card(card)
             
 # Deck class, contains an array 
 class Deck:
