@@ -55,8 +55,8 @@ class Card:
 
 # Hand base class, contains an array of cards
 class Hand:
-    def __init__(self):
-        self.cards = []
+    def __init__(self, cards):
+        self.cards = cards or [];
     def add_card(self, card):
         if card in self.cards:
             log("Card exists in hand already. Not added.")
@@ -69,11 +69,22 @@ class Hand:
             log("Card not in hand. Not removed.")
         else:
             self.cards.remove(card)
-    # move a card to another hand (after dealing)
-    def move_card(self, card, hand):
-        hand.add_card(card)
-        self.remove_card(card)
+    # dump hand into other hand
+    def dump(self, other_hand):
+        for card in self.cards:
+            other_hand.add_card(card)
+            self.remove_card(card)
             
+    # return all cards that are of suit, or empty array.
+    def find_suit(self, suit):
+        ofsuit = []     
+        for card in self.cards:
+            if(card.suit == suit):
+                ofsuit.append(card)
+        return ofsuit
+    def display(self):
+        for card in self.cards:
+            print(card.format())
 # Deck class, contains an array 
 class Deck:
     def __init__(self, cards=[Ace,2,3,4,5,6,7,8,9,10,Jack,Queen,King], suits=[Clubs,Diamonds,Hearts,Spades]):
