@@ -62,7 +62,14 @@ class Hand:
             log("Card exists in hand already. Not added.")
         else:
             self.cards.append(card)
-
+    # remove a card from the hand. ** NOTE: NOT THE SAME AS RETURING TO THE DECK
+    def remove_card(self, card):
+        newcards = []
+        if not card in self.cards:
+            log("Card not in hand. Not removed.")
+        else:
+            self.cards.remove(card)
+            
 # Deck class, contains an array 
 class Deck:
     def __init__(self, cards=[Ace,2,3,4,5,6,7,8,9,10,Jack,Queen,King], suits=[Clubs,Diamonds,Hearts,Spades]):
