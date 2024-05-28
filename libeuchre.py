@@ -183,8 +183,10 @@ class EuchrePlayer(Player):
                     return PreRound2_Result(False)
         else:
             if(self.dealer == True):
-                return PreRound2_Result(True, False, urand(1,4,[faceup.card.suit]))
+                # if dealer, must call suit its been stuck to them; automatic
+                return PreRound2_Result(True, False, urand(1,4,[faceup.suit]))
             else:
+                # not dealer automatic skip
                 return PreRound2_Result(False)
     
     # GAME FUNCTION: NEEDS AUTOMATIC PLAYER CONTROL
@@ -340,7 +342,11 @@ class Trick(Hand):
             highest: EuchreCard = highest_of_single_suit(suit_cards, self.trump)
             return Trick_result(highest, self.get_player_id_from_card(highest))
         
-
+class PlayerContainer:
+    def __init__(self, player: EuchrePlayer = None):
+        self.player = player;
+    def set_player(self, player):
+        self.player = player
 # euchre round class, handles 5 rounds of tricks
 class Round:
     # info pertaining to the euchre round
@@ -348,13 +354,22 @@ class Round:
         self.dealer_index = dealer_index
         self.start_index = self.dealer_index+1
         self.players = players
-        
+        self.dealer = self.players[self.dealer_index]
+
         self.deck: Deck = deck
         self.kitty = EuchreHand()
         self.trick_scores = [0,0]
         self.trump = None;
         self.caller: EuchrePlayer = None;
+        self.test = [];
         self.caller_alone: bool = False 
+        
+        # clear dealer attribute of all players except for current dealer
+        for player in self.players:
+            if(player.id == self.dealer.id):
+                player.dealer = True
+            else: 
+                player.dealer = False
         
     # deal 5 cards to each player
     def deal_cards(self):
@@ -382,13 +397,14 @@ class Round:
         # start at player next to the dealer
         for i in range(0,len(self.players)):
             ind = findex(self.start_index+i, self.players)
-            player = self.players[ind]
+            player: EuchrePlayer = self.players[ind]
             result: PreRound1_Result = player.preround_pickup(self.kitty.cards[0], self.players[self.dealer_index])
             if(result.call == True):
                 self.trump = self.kitty.cards[0].suit
                 self.caller = player
                 self.caller_alone = result.alone
                 return
+            
         # nobody called
         self.preround2()
     
@@ -397,13 +413,14 @@ class Round:
         # start at player next to the dealer
         for i in range(0,len(self.players)):
             ind = findex(self.start_index+i, self.players)
-            player = self.players[ind]
+            player: EuchrePlayer = self.players[ind]
             result: PreRound2_Result = player.preround_call_trump(self.kitty.cards[0])
             if(result.call == True):
                 self.trump = result.suit
                 self.caller = player
                 self.caller_alone = result.alone
                 return
+    
     def find_player_by_id(self, id):
         for player in self.players:
             if player.id == id:
@@ -433,7 +450,7 @@ class Round:
         self.preround()
         self.playround()
         self.postround()
-
+        
         # points calculator
         for t in range(0,2):
             # if team t won the round
