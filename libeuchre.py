@@ -13,6 +13,15 @@ def highest_of_single_suit(cards, trump):
         if card.hierarchical(trump) > highest.hierarchical(trump):
             highest = card
     return highest
+def format_suit(suit):
+    if suit == Clubs:
+        return "Clubs";
+    elif suit == Diamonds:
+        return "Diamonds"
+    elif suit == Hearts:
+        return "Hearts"   
+    elif suit == Spades:
+        return "Spades" 
 # given trump, give the other suit
 def offsuit(trump):
     if trump == Spades:
@@ -100,6 +109,21 @@ class EuchrePlayer(Player):
         choice = finput(prompt_string, range(1,len(cards)+1), False)
         choice_card = cards[choice-1]
         return choice_card
+    def select_suit(self, not_suit):
+        trumpopt = []
+        for suit in [Clubs, Diamonds, Hearts, Spades]:
+            if suit == not_suit:
+                continue
+            else:
+                trumpopt.append(suit)
+        
+        for i in range(0, len(trumpopt)):
+            prompt_string = f"{prompt_string}, ({i+1}) {format_suit(trumpopt[i])}"
+
+        print("choose from suits")
+        choice = finput(prompt_string, range(1,len(trumpopt)+1), False)
+        choise_suit = trumpopt[choice-1]
+        return choise_suit
     
     # THESE FUNCTIONS NEED REORGANIZING!!!!!
     # preround1: tell dealer to pick up or not
@@ -126,14 +150,7 @@ class EuchrePlayer(Player):
         else:
             return PreRound1_Result(False, False)
     # preround 2: call trump, or stick to dealer
-    def preround_call_trump(self, faceup: Card, dealer):
-        trumpopt = []
-        for i in range(1,5):
-            if(i == faceup.suit):
-                continue
-            else:
-                trumpopt.append(str(i))
-                
+    def preround_call_trump(self, faceup: Card):     
         print(f"{self.name}'s turn")
         if(self.controlled == True):
             print("Your hand:")
@@ -141,7 +158,7 @@ class EuchrePlayer(Player):
                 print(card.format())
             if(self.dealer == True):
                 print("Must select a trump suit")
-                suit = int(finput(f"Select suit. ({str(trumpopt)})", trumpopt, False))
+                suit = self.select_suit(faceup.suit)
                 alone = finput(f"Go alone? (y/n)", ['y', 'n']) == 'y'
                 return PreRound2_Result(True, alone, suit)
             else:
@@ -149,7 +166,7 @@ class EuchrePlayer(Player):
                 if select == False:
                     return PreRound2_Result(False)
                 else:
-                    suit = int(finput(f"Pick up {faceup.format()}? ({str(trumpopt)})", trumpopt, False))
+                    suit = self.select_suit(faceup.suit)
                     alone = finput(f"Go alone? (y/n)", ['y', 'n']) == 'y'
                     return PreRound2_Result(True, alone, suit)
         else:
@@ -158,7 +175,7 @@ class EuchrePlayer(Player):
             else:
                 return PreRound2_Result(False)
     
-    # GAME FUNCTION
+    # GAME FUNCTION: NEEDS AUTOMATIC PLAYER CONTROL
     def play_trick(self, lead=None):
         print("Here are your cards:")
         self.hand.display()    
@@ -284,7 +301,6 @@ class Trick(Hand):
             
     # get winning card and player id
     def winner(self):
-        lead_suit = self.cards[0].suit
         # if there is trump present, ignore the other cards
         if len(self.find_suit(self.trump)) > 0:
             trump_cards = self.find_suit(self.trump)
@@ -292,7 +308,7 @@ class Trick(Hand):
             return Trick_result(highest, self.get_player_id_from_card(highest))
         else:
             # highest card of suit lead
-            suit_cards = self.find_suit(self.trump)
+            suit_cards = self.find_suit(self.cards[0].suit)
             highest: EuchreCard = highest_of_single_suit(suit_cards, self.trump)
             return Trick_result(highest, self.get_player_id_from_card(highest))
         
