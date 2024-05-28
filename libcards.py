@@ -69,6 +69,11 @@ class Hand:
             other_hand.add_card(card)
             self.remove_card(card)
             
+    # clear the hand
+    def clear(self):
+        for card in self.cards:
+            self.cards.remove(card)
+
     # return all cards that are of suit, or empty array.
     def find_suit(self, suit):
         ofsuit = []     
