@@ -33,30 +33,30 @@ class Card:
     def format(self):
         c = self.card
         s = self.suit
-        if self.card == 1:
+        if self.card == Ace:
             c = "Ace"
         elif self.card > 10:
-            if self.card == 11:
+            if self.card == Jack:
                 c = "Jack"
-            elif self.card == 12:
+            elif self.card == Queen:
                 c = "Queen"
-            elif self.card == 13:
+            elif self.card == King:
                 c = "King"
-        if self.suit == 1:
+        if self.suit == Clubs:
             s = "Clubs"
-        elif self.suit == 2:
+        elif self.suit == Diamonds:
             s = "Diamonds"
-        elif self.suit == 3:
+        elif self.suit == Hearts:
             s = "Hearts"
-        elif self.suit == 4:
+        elif self.suit == Spades:
             s = "Spades"  
         
         return f"{c} of {s}"
 
 # Hand base class, contains an array of cards
 class Hand:
-    def __init__(self, cards):
-        self.cards = cards or [];
+    def __init__(self, cards=[]):
+        self.cards = cards;
     def add_card(self, card):
         if card in self.cards:
             log("Card exists in hand already. Not added.")
