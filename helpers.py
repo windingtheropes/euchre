@@ -48,7 +48,10 @@ def finput(prompt, options, lower=True):
         options = o
     
     # get input and ensure is allowed
-    i = str(input(prompt)).lower()
+    i = str(input(prompt))
+    if(lower == True):
+        i = i.lower()
+        
     if not i in options:
         return finput(prompt, options)
     else:

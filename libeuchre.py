@@ -106,7 +106,7 @@ class EuchrePlayer(Player):
             prompt_string = f"{prompt_string}, ({i+1}) {card.format()}"
         print("choose from cards")
         
-        choice = finput(prompt_string, range(1,len(cards)+1), False)
+        choice = int(finput(prompt_string, range(1,len(cards)+1), lower=False))
         choice_card = cards[choice-1]
         return choice_card
     def select_suit(self, not_suit):
@@ -121,7 +121,7 @@ class EuchrePlayer(Player):
             prompt_string = f"{prompt_string}, ({i+1}) {format_suit(trumpopt[i])}"
 
         print("choose from suits")
-        choice = finput(prompt_string, range(1,len(trumpopt)+1), False)
+        choice = int(finput(prompt_string, range(1,len(trumpopt)+1), lower=False))
         choise_suit = trumpopt[choice-1]
         return choise_suit
     
@@ -209,8 +209,6 @@ class Game:
         
         print("Euchre by Jack Anderson")
         
-        
-        
     # configure player names, teams, control
     def config_players(self):
         team = 0;
@@ -229,7 +227,6 @@ class Game:
             
             # flip 0 to 1 or 1 to 0
             team = flip(team)
-            
             
     # check if there's a winning team
     def check_win(self):
