@@ -13,10 +13,10 @@ def clear():
         system("clear")
 
 # take a number as input, make sure it fits inside the index of arr given
-def indexf(ind, arr):
+def findex(ind, arr):
     maxi = len(arr)-1
     if ind > maxi:
-        return indexf((ind-maxi)-1, arr)
+        return findex((ind-maxi)-1, arr)
     else:
         return ind
 # safe indexof, find obj in arr
@@ -39,12 +39,13 @@ def flip(bit):
     else:
         return 1
 # forced input takes a list of options that must match, or rerun input
-def finput(prompt, options): 
+def finput(prompt, options, lower=True): 
     # ensure options are all lowercase
-    o = []
-    for opt in options:
-        o.append(opt.lower())
-    options = o
+    if(lower == True):
+        o = []
+        for opt in options:
+            o.append(opt.lower())
+        options = o
     
     # get input and ensure is allowed
     i = str(input(prompt)).lower()
