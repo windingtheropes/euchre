@@ -2,6 +2,7 @@
 # a python library for card games.
 
 from helpers import generate_id, log, urand
+from pathlib import Path
 
 # suits
 Clubs = 1
@@ -47,7 +48,8 @@ class Card:
             s = "Spades"  
         
         return f"{c} of {s}"
-
+    def image_path(self):
+        return Path.joinpath("img", self.format().replace(" ", "_").lower())
 # Hand base class, contains an array of cards
 class Hand:
     def __init__(self, cards=[]):
