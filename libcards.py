@@ -111,9 +111,11 @@ class Deck:
         self.dealt = []
         
      # dump the remainder of the deck into a hand        
-    def dump(self, hand: Hand):
+    def dump(self, hand):
         for card in self.cards:
-            if not card.id in self.dealt:
+            if card.id in self.dealt:
+                continue
+            else:
                 hand.add_card(card)     
                 self.dealt.append(card.id)
                 

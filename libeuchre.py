@@ -1,6 +1,7 @@
 # libeuchre by Jack Anderson
 # a python library for euchre game functions.
 
+# todo: figure out why cards are double dealing.
 from libcards import Hand, Deck, Player, Card, Ace, Jack, Queen, King, Clubs, Diamonds, Hearts, Spades
 from helpers import sinput, finput, flip, clear, indexOf, findex, urand
 
@@ -74,7 +75,7 @@ class EuchreHand(Hand):
             elif(card.suit == suit):
                 ofsuit.append(card)
         return ofsuit
-    
+
 class PreRound1_Result:
     def __init__(self, call:bool, alone:bool=False):
         self.call = call
@@ -94,6 +95,7 @@ class CardBundle:
 class EuchrePlayer(Player):
     def __init__(self, name, controlled=False):
         Player.__init__(self, name);
+        self.hand = EuchreHand()
         self.team = 0;
         self.dealer = False;
         self.controlled = controlled;
@@ -127,7 +129,7 @@ class EuchrePlayer(Player):
     
     # THESE FUNCTIONS NEED REORGANIZING!!!!!
     # preround1: tell dealer to pick up or not
-    def preround_pickup(self, faceup: Card, dealer):
+    def preround_pickup(self, faceup: EuchreCard, dealer):
         print(f"{self.name}'s turn")
         if(self.controlled == True):
             print("Your hand:")
@@ -150,7 +152,7 @@ class EuchrePlayer(Player):
         else:
             return PreRound1_Result(False, False)
     # preround 2: call trump, or stick to dealer
-    def preround_call_trump(self, faceup: Card):     
+    def preround_call_trump(self, faceup: EuchreCard):     
         print(f"{self.name}'s turn")
         if(self.controlled == True):
             print("Your hand:")
@@ -323,7 +325,7 @@ class Round:
         self.dealer.dealer = True
         
         self.deck: Deck = deck
-        self.kitty = Hand()
+        self.kitty = EuchreHand()
         self.trick_scores = [0,0]
         self.trump = None;
         self.caller: EuchrePlayer = None;
@@ -336,8 +338,13 @@ class Round:
             for i in range(0,len(self.players)):
                 ind = findex(self.start_index+i, self.players)
                 player: EuchrePlayer = self.players[ind]
-                player.hand.add_card(self.deck.deal())
+                card = self.deck.deal()
                 
+                # TODO: SOMETHING IS WRONG!!!
+                if card.id in self.deck.dealt:
+                    print("how are we here")
+                
+                player.hand.add_card(card)
     def deal(self):
         # deal cards to players
         self.deal_cards();
