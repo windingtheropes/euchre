@@ -5,6 +5,57 @@ from libcards import Hand, Deck, Player, Card, Ace, Jack, Queen, King, Clubs, Di
 from helpers import sinput, finput, flip, clear, indexOf, indexf, urand
 from time import sleep
 
+# given trump, give the other suit
+def offsuit(trump):
+    if trump == Spades:
+        return Clubs
+    elif trump == Clubs:
+        return Spades
+    elif trump == Diamonds:
+        return Hearts
+    elif trump == Hearts:
+        return Diamonds
+class EuchreCard(Card):
+    def __init__(self, c, s):
+        Card.__init__(self, c, s);
+    # based on trump give a heirarchical representation of the card relative to suit
+    # meaning
+    # non trump: 9=1, 10=2, jack: 3, queen: 4, king: 5, ace: 6
+    # trump: 9=1,10=2,queen:3,king:4,ace:5,offs_jack: 6, jack: 7   
+    def hierarchical(self, trump):
+        if(self.suit == trump or (self.card == Jack and self.suit == offsuit(trump))):
+            if self.card == Jack:
+                if self.suit == trump:
+                    return 7
+                elif self.suit == offsuit(trump):
+                    return 6
+            else:
+                if self.card == 9:
+                    return 1;
+                elif self.card == 10:
+                    return 2;
+                elif self.card == Queen:
+                    return 3;
+                elif self.card == King:
+                    return 4;
+                elif self.card == Ace:
+                    return 5;
+        else:
+            return (1*self.card) - 8
+        
+# hand specific to euchre: findsuit based on bauers
+class EuchreHand(Hand):
+    def __init__(self):
+        Hand.__init__(self);
+    def find_suit(self, suit, trump):
+        ofsuit = []     
+        for card in self.cards:
+            if(card.card == Jack):
+                if(card.suit == suit or card.suit == offsuit(trump)):
+                    ofsuit.append(card)
+            elif(card.suit == suit):
+                ofsuit.append(card)
+        return ofsuit
     
 class PreRound1_Result:
     def __init__(self, call:bool, alone:bool=False):
@@ -17,6 +68,7 @@ class PreRound2_Result:
         self.suit = suit
         self.alone = alone
         pass
+# cardbundle returned by a player contributing to a trick
 class CardBundle:
     def __init__(self, cards):
         self.cards = cards
@@ -93,7 +145,7 @@ class EuchrePlayer(Player):
             return CardBundle([card])
         else:
             suit = lead.suit
-            cardsofsuit = Hand(self.hand.find_suit(suit))
+            cardsofsuit = EuchreHand(self.hand.find_suit(suit))
             if(len(cardsofsuit) > 0):
                 print("must follow suit.")
                 cardsofsuit.display()
@@ -104,16 +156,6 @@ class EuchrePlayer(Player):
                 c = int(finput(f"Select a card to lay down (0-${len(self.cards)-1})"), range(0, len(self.cards)))
                 card = self.cards[c]
                 return CardBundle([card])
-class EuchreDeck(Deck):
-    def __init__(self, cards=[Ace,2,3,4,5,6,7,8,9,10,Jack,Queen,King], suits=[Clubs,Diamonds,Hearts,Spades]):
-        Deck.__init__(self, cards, suits)
-                
-    # dump the remainder of the deck into a hand        
-    def dump(self, hand: Hand):
-        for card in self.cards:
-            if not card.id in self.dealt:
-                hand.add_card(card)     
-                self.dealt.append(card.id)
              
 class RoundResult:
     def __init__(self, winning_team, points):
@@ -123,7 +165,7 @@ class RoundResult:
 # euchre base game class
 class Game:
     def __init__(self):
-        self.deck = EuchreDeck(cards=[Ace,9,10,Jack,Queen,King])
+        self.deck = Deck(cards=[Ace,9,10,Jack,Queen,King], suits=[Clubs, Diamonds, Hearts, Spades], card=EuchreCard)
         self.scores = [0,0]
         self.players = []
         
@@ -178,6 +220,7 @@ class Trick_result:
 class Trick(Hand):
     def __init__(self, trump, players, lead_index):
         Hand.__init__(self);
+        self.discard = Hand()
         self.trump = trump
         self.players = players
         # should be an index
@@ -186,30 +229,45 @@ class Trick(Hand):
         # loop through 4 players
         for i in range(0,4):
             ind = indexf(self.lead_index+i, self.players)
-            player = self.players[ind] 
+            player: EuchrePlayer = self.players[ind] 
             if i == 0:
                 # whoever goes first doesn't have a suit to follow
-                res = player.play_trick()
+                res: CardBundle = player.play_trick()
+                for card in res.cards:
+                    player.hand.remove_card(card);
+                    self.add_card(card)
+                    print(f"${player.name} puts down ${card.format()}")
             else:
                 # must follow suit, so pass the lead card
                 lead_card = self.cards[0]
-                res = player.play_trick(lead_card)          
-        pass;    
+                res: CardBundle = player.play_trick(lead_card)          
+                for card in res.cards:
+                    player.hand.remove_card(card);
+                    self.add_card(card)
+                    print(f"${player.name} puts down ${card.format()}")
+        return self
     # identifiable cards to the player
     def add_card(self, card, player):
         if not [card, player.id] in self.cards:
             self.cards.append([card, player.id])
+            
     # get winning card and player id
-    def winner():
-        pass   
-    
-        
+    def winner(self):
+        lead_suit = self.cards[0].suit
+        # if there is trump present, ignore the other cards
+        trump_cards = len(self.find_suit(self.trump))
+        if len(trump_cards) > 0:
+            pass;
+        else:
+            # highest card of suit lead
+            
+            pass;
         
 
 # euchre round class, handles 5 rounds of tricks
 class Round:
     # info pertaining to the euchre round
-    def __init__(self, deck: EuchreDeck, players, dealer_index):
+    def __init__(self, deck: Deck, players, dealer_index):
         self.dealer_index = dealer_index
         self.start_index = self.dealer_index+1
         self.players = players
@@ -217,7 +275,7 @@ class Round:
         self.dealer.dealer = True
         
         self.deck = deck
-        self.kiddy = Hand()
+        self.kitty = Hand()
         self.trick_scores = [0,0]
         self.trump = None;
         self.caller = None;
@@ -236,10 +294,10 @@ class Round:
         # deal cards to players
         self.deal_cards();
         # add remainder of cards to kiddy
-        self.deck.dump(self.kiddy)
+        self.deck.dump(self.kitty)
         # turn up first card of kiddy
-        self.kiddy.cards[0].visible = True  
-        print(f"The top card of the kiddy is {self.kiddy.cards[0].format()}")
+        self.kitty.cards[0].visible = True  
+        print(f"The top card of the kiddy is {self.kitty.cards[0].format()}")
         
     # call to pick up or pass
     def preround(self):
@@ -247,9 +305,9 @@ class Round:
         for i in range(0,len(self.players)):
             ind = indexf(self.start_index+i, self.players)
             player = self.players[ind]
-            result: PreRound1_Result = player.preround_pickup(self.kiddy.cards[0], self.dealer)
+            result: PreRound1_Result = player.preround_pickup(self.kitty.cards[0], self.dealer)
             if(result.call == True):
-                self.trump = self.kiddy.cards[0].suit
+                self.trump = self.kitty.cards[0].suit
                 self.caller = player
                 self.caller_alone = result.alone
                 return
@@ -262,7 +320,7 @@ class Round:
         for i in range(0,len(self.players)):
             ind = indexf(self.start_index+i, self.players)
             player = self.players[ind]
-            result: PreRound2_Result = player.preround_call_trump(self.kiddy.cards[0], self.dealer)
+            result: PreRound2_Result = player.preround_call_trump(self.kitty.cards[0], self.dealer)
             if(result.call == True):
                 self.trump = result.suit
                 self.caller = player
@@ -272,14 +330,14 @@ class Round:
     def playround(self):
         # loop through 5 hands
         for i in range(1,6):
-            winner = Trick(self.trump, self.players, self.start_index)
+            winner = Trick(self.trump, self.players, self.start_index).run_trick().winner()
             pass      
         pass
     # postround: clear hands and clear the deck
     def postround(self):
         for plr in self.players:
             plr.hand.clear()
-        self.kiddy.clear()
+        self.kitty.clear()
         self.deck.relinquish()
         pass
     def run(self):

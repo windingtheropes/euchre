@@ -13,7 +13,7 @@ Spades = 4
 Jack = 11
 Queen = 12
 King = 13
-Ace = 1
+Ace = 14
 
 # Player base class, contains a hand
 class Player:
@@ -85,17 +85,17 @@ class Hand:
     def display(self):
         for card in self.cards:
             print(card.format())
-# Deck class, contains an array 
+# Deck class, contains an array
 class Deck:
-    def __init__(self, cards=[Ace,2,3,4,5,6,7,8,9,10,Jack,Queen,King], suits=[Clubs,Diamonds,Hearts,Spades]):
+    def __init__(self, cards=[Ace,2,3,4,5,6,7,8,9,10,Jack,Queen,King], suits=[Clubs,Diamonds,Hearts,Spades], card=Card):
         self.cards = []
         self.dealt = []
-
+        
         # Fill the deck according to card restraints
         for s in suits:
             for c in cards:
-                self.cards.append(Card(c, s))
-                
+                self.cards.append(card(c, s))    
+                       
     # pull a card from the top of the undealt deck
     def deal(self):
         if len(self.dealt) == len(self.cards):
@@ -109,7 +109,14 @@ class Deck:
     # return all cards to the deck (clear self.dealt)
     def relinquish(self):    
         self.dealt = []
-    
+        
+     # dump the remainder of the deck into a hand        
+    def dump(self, hand: Hand):
+        for card in self.cards:
+            if not card.id in self.dealt:
+                hand.add_card(card)     
+                self.dealt.append(card.id)
+                
     # shuffle the deck
     def shuffle(self):
         newdeck = []
