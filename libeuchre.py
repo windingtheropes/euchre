@@ -341,12 +341,7 @@ class Trick(Hand):
             suit_cards = self.find_suit(self.cards[0].suit)
             highest: EuchreCard = highest_of_single_suit(suit_cards, self.trump)
             return Trick_result(highest, self.get_player_id_from_card(highest))
-        
-class PlayerContainer:
-    def __init__(self, player: EuchrePlayer = None):
-        self.player = player;
-    def set_player(self, player):
-        self.player = player
+    
 # euchre round class, handles 5 rounds of tricks
 class Round:
     # info pertaining to the euchre round

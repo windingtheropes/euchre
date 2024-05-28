@@ -38,6 +38,7 @@ def flip(bit):
         return 0
     else:
         return 1
+# forced int input 
 def fiinput(prompt, options):
     str_in = input(prompt)
     try:
