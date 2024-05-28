@@ -3,7 +3,7 @@
 
 # todo: figure out why cards are double dealing.
 from libcards import Hand, Deck, Player, Card, Ace, Jack, Queen, King, Clubs, Diamonds, Hearts, Spades
-from helpers import sinput, finput, flip, clear, indexOf, findex, urand
+from helpers import sinput, finput, flip, clear, indexOf, findex, urand, fiinput
 
 def highest_of_single_suit(cards, trump):
     highest: EuchreCard;
@@ -109,7 +109,7 @@ class EuchrePlayer(Player):
             prompt_string = f"{prompt_string}, ({i+1}) {card.format()}"
         print("choose from cards")
         
-        choice = int(finput(prompt_string, range(1,len(cards)+1), lower=False))
+        choice = fiinput(prompt_string, range(1,len(cards)+1))
         choice_card = cards[choice-1]
         return choice_card
     def select_suit(self, not_suit):
@@ -125,7 +125,7 @@ class EuchrePlayer(Player):
             prompt_string = f"{prompt_string}, ({i+1}) {format_suit(trumpopt[i])}"
 
         print("choose from suits")
-        choice = int(finput(prompt_string, range(1,len(trumpopt)+1), lower=False))
+        choice = fiinput(prompt_string, range(1,len(trumpopt)+1))
         choise_suit = trumpopt[choice-1]
         return choise_suit
     
@@ -174,7 +174,7 @@ class EuchrePlayer(Player):
                 return PreRound2_Result(False)
     
     # GAME FUNCTION: NEEDS AUTOMATIC PLAYER CONTROL
-    def play_trick(self, lead=None): 
+    def play_trick(self, lead=None, trump=None): 
         if lead == None:
             # This player is going first
             card = self.select_card(self.hand.cards)
@@ -182,7 +182,7 @@ class EuchrePlayer(Player):
             return CardBundle([card])
         else:
             suit = lead.suit
-            cardsofsuit = EuchreHand(self.hand.find_suit(suit))
+            cardsofsuit = EuchreHand(self.hand.find_suit(suit, trump))
             if(len(cardsofsuit) > 0):
                 print("must follow suit.")
                 card = self.select_card(cardsofsuit)
@@ -252,6 +252,7 @@ class Trick_result:
 class Trick(Hand):
     def __init__(self, trump, players, lead_index):
         Hand.__init__(self);
+        self.cards =[]
         # list of what cards what player placed [player_id, card_id]
         self.player_cards = [];
         self.trump = trump
@@ -272,18 +273,18 @@ class Trick(Hand):
             player: EuchrePlayer = self.players[ind] 
             if i == 0:
                 # whoever goes first doesn't have a suit to follow
-                res: CardBundle = player.play_trick()
+                res: CardBundle = player.play_trick(trump=self.trump)
                 for card in res.cards:
                     player.hand.remove_card(card);
-                    self.add_card(card)
+                    self.add_card(card, player)
                     print(f"${player.name} puts down ${card.format()}")
             else:
                 # must follow suit, so pass the lead card
                 lead_card = self.cards[0]
-                res: CardBundle = player.play_trick(lead_card)          
+                res: CardBundle = player.play_trick(lead_card, trump=self.trump)          
                 for card in res.cards:
                     player.hand.remove_card(card);
-                    self.add_card(card)
+                    self.add_card(card, player)
                     print(f"${player.name} puts down ${card.format()}")
         return self
     # identifiable cards to the player

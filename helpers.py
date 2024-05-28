@@ -38,19 +38,25 @@ def flip(bit):
         return 0
     else:
         return 1
+def fiinput(prompt, options):
+    str_in = input(prompt)
+    try:
+        int_in = int(str_in)
+        if not int_in in options:
+            return fiinput(prompt, options)
+        return int_in
+    except:
+        return fiinput(prompt, options)
+        
 # forced input takes a list of options that must match, or rerun input
-def finput(prompt, options, lower=True): 
-    # ensure options are all lowercase
-    if(lower == True):
-        o = []
-        for opt in options:
-            o.append(opt.lower())
-        options = o
+def finput(prompt, options): 
+    o = []
+    for opt in options:
+        o.append(opt.lower())
+    options = o
     
     # get input and ensure is allowed
-    i = str(input(prompt))
-    if(lower == True):
-        i = i.lower()
+    i = str(input(prompt)).lower()
         
     if not i in options:
         return finput(prompt, options)
