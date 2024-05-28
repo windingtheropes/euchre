@@ -15,12 +15,7 @@ Queen = 12
 King = 13
 Ace = 14
 
-# Player base class, contains a hand
-class Player:
-    def __init__(self, name):
-        self.name = name
-        self.id = generate_id()
-        self.hand = Hand()
+
 # Card class, contains a card number, a suit, and a unique id
 class Card:
     def __init__(self, card, suit, visible=False):
@@ -58,13 +53,12 @@ class Hand:
     def __init__(self, cards=[]):
         self.cards = cards;
     def add_card(self, card):
-        if card in self.cards:
-            log("Card exists in hand already. Not added.")
-        else:
-            self.cards.append(card)
+        for c in self.cards:
+            if c.id == card.id:
+                return log("Card exists in hand already. Not added.")
+        self.cards.append(card)
     # remove a card from the hand. ** NOTE: NOT THE SAME AS RETURING TO THE DECK
     def remove_card(self, card):
-        newcards = []
         if not card in self.cards:
             log("Card not in hand. Not removed.")
         else:
@@ -111,12 +105,12 @@ class Deck:
         self.dealt = []
         
      # dump the remainder of the deck into a hand        
-    def dump(self, hand):
+    def dump(self, other_hand):
         for card in self.cards:
             if card.id in self.dealt:
                 continue
             else:
-                hand.add_card(card)     
+                other_hand.add_card(card)     
                 self.dealt.append(card.id)
                 
     # shuffle the deck
@@ -129,6 +123,10 @@ class Deck:
             newdeck.append(self.cards[r])
         self.cards = newdeck
         
-
-    
+# Player base class, contains a hand
+class Player:
+    def __init__(self, name):
+        self.name = name
+        self.id = generate_id()
+        self.hand = Hand()    
 

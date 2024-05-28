@@ -66,6 +66,7 @@ class EuchreCard(Card):
 class EuchreHand(Hand):
     def __init__(self):
         Hand.__init__(self);
+        self.cards=[]
     def find_suit(self, suit, trump):
         ofsuit = []     
         for card in self.cards:
@@ -75,7 +76,7 @@ class EuchreHand(Hand):
             elif(card.suit == suit):
                 ofsuit.append(card)
         return ofsuit
-
+    
 class PreRound1_Result:
     def __init__(self, call:bool, alone:bool=False):
         self.call = call
@@ -113,6 +114,7 @@ class EuchrePlayer(Player):
         return choice_card
     def select_suit(self, not_suit):
         trumpopt = []
+        prompt_string = ""
         for suit in [Clubs, Diamonds, Hearts, Spades]:
             if suit == not_suit:
                 continue
@@ -132,9 +134,6 @@ class EuchrePlayer(Player):
     def preround_pickup(self, faceup: EuchreCard, dealer):
         print(f"{self.name}'s turn")
         if(self.controlled == True):
-            print("Your hand:")
-            for card in self.hand.cards:
-                print(card.format())
             if(self.dealer == True):
                 pickup = finput(f"Pick up {faceup.format()}? (y/n)", ['y', 'n']) == 'y'
                 if(pickup == True):
@@ -155,9 +154,6 @@ class EuchrePlayer(Player):
     def preround_call_trump(self, faceup: EuchreCard):     
         print(f"{self.name}'s turn")
         if(self.controlled == True):
-            print("Your hand:")
-            for card in self.hand.cards:
-                print(card.format())
             if(self.dealer == True):
                 print("Must select a trump suit")
                 suit = self.select_suit(faceup.suit)
@@ -178,9 +174,7 @@ class EuchrePlayer(Player):
                 return PreRound2_Result(False)
     
     # GAME FUNCTION: NEEDS AUTOMATIC PLAYER CONTROL
-    def play_trick(self, lead=None):
-        print("Here are your cards:")
-        self.hand.display()    
+    def play_trick(self, lead=None): 
         if lead == None:
             # This player is going first
             card = self.select_card(self.hand.cards)
@@ -229,7 +223,6 @@ class Game:
             
             # flip 0 to 1 or 1 to 0
             team = flip(team)
-            
     # check if there's a winning team
     def check_win(self):
         for i in range(0,len(self.scores)):
@@ -320,15 +313,12 @@ class Round:
         self.dealer_index = dealer_index
         self.start_index = self.dealer_index+1
         self.players = players
-        self.dealer: EuchrePlayer = self.players[dealer_index]
-        # TODO: CHANGE THIS LINE (NOT SURE IF IT HAS A PURPOSE)
-        self.dealer.dealer = True
         
         self.deck: Deck = deck
         self.kitty = EuchreHand()
         self.trick_scores = [0,0]
         self.trump = None;
-        self.caller: EuchrePlayer = None;
+        self.caller_index = None;
         self.caller_alone: bool = False 
         
     # deal 5 cards to each player
@@ -337,17 +327,15 @@ class Round:
             # start at player next to the dealer
             for i in range(0,len(self.players)):
                 ind = findex(self.start_index+i, self.players)
-                player: EuchrePlayer = self.players[ind]
+                player = self.players[ind]
                 card = self.deck.deal()
-                
-                # TODO: SOMETHING IS WRONG!!!
-                if card.id in self.deck.dealt:
-                    print("how are we here")
-                
                 player.hand.add_card(card)
+
     def deal(self):
         # deal cards to players
         self.deal_cards();
+        
+        # CONCLUSION: PLAYERS SEEM TO BE HOLDING THE SAME HAND
         # add remainder of cards to kiddy
         self.deck.dump(self.kitty)
         # turn up first card of kiddy
@@ -360,7 +348,7 @@ class Round:
         for i in range(0,len(self.players)):
             ind = findex(self.start_index+i, self.players)
             player = self.players[ind]
-            result: PreRound1_Result = player.preround_pickup(self.kitty.cards[0], self.dealer)
+            result: PreRound1_Result = player.preround_pickup(self.kitty.cards[0], self.players[self.dealer_index])
             if(result.call == True):
                 self.trump = self.kitty.cards[0].suit
                 self.caller = player
@@ -375,7 +363,7 @@ class Round:
         for i in range(0,len(self.players)):
             ind = findex(self.start_index+i, self.players)
             player = self.players[ind]
-            result: PreRound2_Result = player.preround_call_trump(self.kitty.cards[0], self.dealer)
+            result: PreRound2_Result = player.preround_call_trump(self.kitty.cards[0])
             if(result.call == True):
                 self.trump = result.suit
                 self.caller = player
