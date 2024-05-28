@@ -238,18 +238,20 @@ class Game:
      
     def start(self):
         # start the game
-        # i = 0
-        # while not self.check_win()[0]:
-        fi = findex(0, self.players)
-        dealer_index = fi
-        round = Round(deck=self.deck, players=self.players, dealer_index=dealer_index)
-        res = round.run()
-        # i+=1
-        # print(f"Team {self.check_win()[1]} wins.")
+        i = 0
+        while not self.check_win()[0]:
+            # rotate through players for dealers until a team wins
+            dealer_index = findex(i, self.players)
+            round = Round(deck=self.deck, players=self.players, dealer_index=dealer_index)
+            res: RoundResult = round.run()
+            self.scores[res.winning_team] += res.points
+            i+=1
+        print(f"Team {self.check_win()[1]} wins.")
 
 class Trick_result:
     def __init__(self, card, player_id):
         self.card = card
+        self.id = player_id
 
 # euchre trick class, extension of hand, holds cards and determines trick winner
 class Trick(Hand):
@@ -257,7 +259,6 @@ class Trick(Hand):
         Hand.__init__(self);
         # list of what cards what player placed [player_id, card_id]
         self.player_cards = [];
-        self.discard = Hand()
         self.trump = trump
         self.players = players
         # should be an index
@@ -317,15 +318,16 @@ class Round:
         self.dealer_index = dealer_index
         self.start_index = self.dealer_index+1
         self.players = players
-        self.dealer = self.players[dealer_index]
+        self.dealer: EuchrePlayer = self.players[dealer_index]
+        # TODO: CHANGE THIS LINE (NOT SURE IF IT HAS A PURPOSE)
         self.dealer.dealer = True
         
-        self.deck = deck
+        self.deck: Deck = deck
         self.kitty = Hand()
         self.trick_scores = [0,0]
         self.trump = None;
-        self.caller = None;
-        self.caller_alone = False 
+        self.caller: EuchrePlayer = None;
+        self.caller_alone: bool = False 
         
     # deal 5 cards to each player
     def deal_cards(self):
@@ -343,7 +345,7 @@ class Round:
         self.deck.dump(self.kitty)
         # turn up first card of kiddy
         self.kitty.cards[0].visible = True  
-        print(f"The top card of the kiddy is {self.kitty.cards[0].format()}")
+        print(f"The top card of the kitty is {self.kitty.cards[0].format()}")
         
     # call to pick up or pass
     def preround(self):
@@ -372,12 +374,19 @@ class Round:
                 self.caller = player
                 self.caller_alone = result.alone
                 return
-    
+    def find_player_by_id(self, id):
+        for player in self.players:
+            if player.id == id:
+                return player
     def playround(self):
         # loop through 5 hands
         for i in range(1,6):
-            winner = Trick(self.trump, self.players, self.start_index).run_trick().winner()
-            pass      
+            # trick is disposable so cards dont matter to be deleted
+            winner: Trick_result = Trick(self.trump, self.players, self.start_index).run_trick().winner()
+            player: EuchrePlayer = self.find_player_by_id(winner.id)
+            # the winner of the trick plays next
+            self.start_index = indexOf(self.find_player_by_id(player.id), self.players)
+            self.trick_scores[player.team] += 1      
         pass
     # postround: clear hands and clear the deck
     def postround(self):
@@ -393,4 +402,27 @@ class Round:
         
         self.preround()
         self.playround()
+        self.postround()
+        
+        # points calculator
+        for t in range(0,2):
+            # if team t won the round
+            if(self.trick_scores[t] >= 3):
+                if(self.trick_scores[t] == 5):
+                    if(self.caller_alone == True):
+                        # 4 points for all 5 alone
+                        return RoundResult(t, 4)
+                    else:
+                        # 2 points for all 5 as a team
+                        return RoundResult(t, 2)
+                else:
+                    if(self.caller.team != t):
+                        # 2 points for euchre
+                        return RoundResult(t, 2)
+                    else:
+                        # 1 point for winning and calling
+                        return RoundResult(t, 1)
+            # team t did not win
+            else:
+                continue
         
