@@ -6,7 +6,7 @@ from libcards import Hand, Deck, Player, Card, Ace, Jack, Queen, King, Clubs, Di
 from helpers import sinput, finput, flip, clear, indexOf, findex, urand, fiinput
 
 def highest_of_single_suit(cards, trump):
-    highest: EuchreCard;
+    highest: EuchreCard = None;
     for card in cards:
         if not highest:
             highest = card;
@@ -64,9 +64,15 @@ class EuchreCard(Card):
         
 # hand specific to euchre: findsuit based on bauers
 class EuchreHand(Hand):
-    def __init__(self):
+    def __init__(self, preload_cards=[]):
         Hand.__init__(self);
         self.cards=[]
+        
+        # preload cards to the hand if they were specified
+        if len(preload_cards) > 0:
+            for card in preload_cards:
+                self.add_card(card)
+                
     def find_suit(self, suit, trump):
         ofsuit = []     
         for card in self.cards:
@@ -107,8 +113,8 @@ class EuchrePlayer(Player):
         for i in range(0, len(cards)):
             card = cards[i]
             prompt_string = f"{prompt_string}, ({i+1}) {card.format()}"
+            
         print("choose from cards")
-        
         choice = fiinput(prompt_string, range(1,len(cards)+1))
         choice_card = cards[choice-1]
         return choice_card
@@ -120,7 +126,8 @@ class EuchrePlayer(Player):
                 continue
             else:
                 trumpopt.append(suit)
-        
+                
+        print("select trump suit")
         for i in range(0, len(trumpopt)):
             prompt_string = f"{prompt_string}, ({i+1}) {format_suit(trumpopt[i])}"
 
@@ -183,9 +190,9 @@ class EuchrePlayer(Player):
         else:
             suit = lead.suit
             cardsofsuit = EuchreHand(self.hand.find_suit(suit, trump))
-            if(len(cardsofsuit) > 0):
+            if(len(cardsofsuit.cards) > 0):
                 print("must follow suit.")
-                card = self.select_card(cardsofsuit)
+                card = self.select_card(cardsofsuit.cards)
                 return CardBundle([card])
             else:
                 card = self.select_card(self.hand.cards)
