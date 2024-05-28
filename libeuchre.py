@@ -142,20 +142,25 @@ class EuchrePlayer(Player):
         print(f"{self.name}'s turn")
         if(self.controlled == True):
             if(self.dealer == True):
+                # if dealer, they can pick up or pass to the next preround
                 pickup = finput(f"Pick up {faceup.format()}? (y/n)", ['y', 'n']) == 'y'
                 if(pickup == True):
                     alone = finput(f"Go alone? (y/n)", ['y', 'n']) == 'y'
                     return PreRound1_Result(True, alone)
                 return PreRound1_Result(False, False)
             else:
+                # if not dealer, they can call to pick up or pass
                 call = finput(f"Tell dealer to pick up {faceup.format()}? (y/n)", ['y', 'n']) == 'y'  
                 if(call == True):
                    if(self.team == dealer.team):
                        print("Must go alone.")
                        return PreRound1_Result(True, True)  
+                   else:
+                       return PreRound1_Result(True, True)  
                 elif(call==False):
                     return PreRound1_Result(False, False)  
         else:
+            # automatic players always pass :)
             return PreRound1_Result(False, False)
     # preround 2: call trump, or stick to dealer
     def preround_call_trump(self, faceup: EuchreCard):     
@@ -183,20 +188,34 @@ class EuchrePlayer(Player):
     # GAME FUNCTION: NEEDS AUTOMATIC PLAYER CONTROL
     def play_trick(self, lead=None, trump=None): 
         if lead == None:
-            # This player is going first
-            card = self.select_card(self.hand.cards)
+            if(self.controlled == True):
+                # This player is going first
+                card = self.select_card(self.hand.cards)
                 
-            return CardBundle([card])
+                return CardBundle([card])
+            else:
+                # automatically select a random card
+                return CardBundle([self.hand.cards[urand(0, len(self.hand.cards)-1, [])]])
         else:
             suit = lead.suit
             cardsofsuit = EuchreHand(self.hand.find_suit(suit, trump))
             if(len(cardsofsuit.cards) > 0):
-                print("must follow suit.")
-                card = self.select_card(cardsofsuit.cards)
-                return CardBundle([card])
+                # player must follow suit
+                if self.controlled == True:
+                    print("must follow suit.")
+                    card = self.select_card(cardsofsuit.cards)
+                    return CardBundle([card])
+                else:
+                    # automatically select a card of suit
+                    return CardBundle([cardsofsuit.cards[urand(0, len(cardsofsuit.cards)-1, [])]])
             else:
-                card = self.select_card(self.hand.cards)
-                return CardBundle([card])
+                if(self.controlled == True):
+                    # player can play any card
+                    card = self.select_card(self.hand.cards)
+                    return CardBundle([card])
+                else:
+                    # automatically select a random card
+                    return CardBundle([self.hand.cards[urand(0, len(self.hand.cards)-1, [])]])
 
 class RoundResult:
     def __init__(self, winning_team, points):
