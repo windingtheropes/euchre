@@ -137,11 +137,24 @@ class EuchrePlayer(Player):
         choise_suit = trumpopt[choice-1]
         return choise_suit
     
+    def pickup(self, card):
+        if(self.controlled == True):
+            clear()
+            print(f"You're picking up {card.format()}")
+            print("Must discard another card. Select.")
+            return self.select_card(self.hand.cards)
+        else:
+            print(f"{self.name} discards a card and picks up {card.format()}.")
+            return self.hand.cards[urand(0, len(self.hand.cards)-1, [])]
+        
     # THESE FUNCTIONS NEED REORGANIZING!!!!!
     # preround1: tell dealer to pick up or not
     def preround_pickup(self, faceup: EuchreCard, dealer):
         print(f"{self.name}'s turn")
         if(self.controlled == True):
+            clear()
+            print("Your hand")
+            self.hand.display()
             if(self.dealer == True):
                 # if dealer, they can pick up or pass to the next preround
                 pickup = finput(f"Pick up {faceup.format()}? (y/n)", ['y', 'n']) == 'y'
@@ -166,6 +179,10 @@ class EuchrePlayer(Player):
     def preround_call_trump(self, faceup: EuchreCard):     
         print(f"{self.name}'s turn")
         if(self.controlled == True):
+            # temp disp
+            clear()
+            print("Your hand")
+            self.hand.display()
             if(self.dealer == True):
                 # stick to dealer, dealer must call trump suit
                 print("Must select a trump suit")
@@ -189,10 +206,13 @@ class EuchrePlayer(Player):
                 # not dealer automatic skip
                 return PreRound2_Result(False)
     
-    # GAME FUNCTION: NEEDS AUTOMATIC PLAYER CONTROL
     def play_trick(self, lead=None, trump=None): 
         if lead == None:
             if(self.controlled == True):
+                # temp disp
+                clear()
+                print("Your hand")
+                self.hand.display()
                 # This player is going first
                 card: EuchreCard = self.select_card(self.hand.cards)
                 
@@ -259,6 +279,12 @@ class Game:
             
             # flip 0 to 1 or 1 to 0
             team = flip(team)
+    # for running the game programmatically
+    def add_player(self, player):
+        if(len(self.players) >= 4) or (player in self.players):
+            return
+        self.players.append(player)
+        
     # check if there's a winning team
     def check_win(self):
         for i in range(0,len(self.scores)):
@@ -395,7 +421,11 @@ class Round:
             player: EuchrePlayer = self.players[ind]
             result: PreRound1_Result = player.preround_pickup(self.kitty.cards[0], self.players[self.dealer_index])
             if(result.call == True):
+                discard: EuchreCard = self.dealer.pickup(self.kitty.cards[0])
                 self.trump = self.kitty.cards[0].suit
+                self.kitty.remove_card(self.kitty.cards[0])
+                self.kitty.add_card(discard)
+                
                 self.caller = player
                 self.caller_alone = result.alone
                 return
