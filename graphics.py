@@ -1,4 +1,12 @@
 # graphics for the game :) by jack anderson
+# plan
+
+# class which holds a method which calls events
+# a render function
+# therefore it can handle its own input and updates for as long as it exists
+# the running function should have an activescreen method
+# class for screens will have an exit code, 0 will continue rendering it, 1 will stop rendering it, and another screen should be provided
+
 import pygame
 pygame.init()
 
