@@ -16,13 +16,12 @@ HEIGHT = 864
 screen = pygame.display.set_mode((WIDTH,HEIGHT))
 clock = pygame.time.Clock()
 pygame.display.set_caption("Euchre")
-
+from libeuchre import EuchreCard
 
 
 img = pygame.image.load("img/jack_of_hearts.png").convert()
 # dimensions of any given card is 222x323, so this is half scale
 img = pygame.transform.scale(img, (222/2,323/2))
-running = True
 def font(font, size):
     return pygame.font.SysFont(font, size)
 
@@ -58,20 +57,48 @@ class Flow:
         pass;
 def menu():
     screen.fill((255,255,255))
-    
-b = Button()
-while running:
-    # the active screen could be a class, which has bindings to events, and has a render method.
-     # activeScreen = 
-    for event in pygame.event.get():
-        b.on_event(event)
-        # close window if pressed close
-        if event.type == pygame.QUIT:
-            running = False
-    menu()
-    # screen.blit(img, (50,0))
-    b.render()
-    pygame.display.flip()
-    clock.tick(60)
-else:
-    pygame.quit()
+class CardDisplay:
+    def __init__(self):
+        self.cards = []
+        self.card_imgs = []
+        pass;
+    def load(self):
+        for card in self.cards:
+            c = pygame.image.load(f"img/{card.format().lower().replace(' ', '_')}.png")
+            # dimensions of any given card is 222x323, so this is half scale
+            c = pygame.transform.scale(c, (222/2,323/2))
+            self.card_imgs.append(c)
+    def render(self):
+        i = 0
+        for cimg in self.card_imgs:
+            screen.blit(cimg, (i,0))
+            i+=222/2
+    def set_cards(self, cards):
+        self.cards = cards
+        self.load()
+        
+class GameScreen:
+    def __init__(self):
+        view: Flow = None;
+        pass
+    def start(self):
+        # b = Button()
+        c = CardDisplay()
+        
+        running = True
+        while running:
+            for event in pygame.event.get():
+                # b.on_event(event)
+                # close window if pressed close
+                if event.type == pygame.QUIT:
+                    running = False
+            menu()
+        # screen.blit(img, (50,0))
+            # b.render()
+            c.render()
+            c.set_cards([EuchreCard(14,2), EuchreCard(13,2),EuchreCard(12,2),EuchreCard(11,2),EuchreCard(10,3)])
+            pygame.display.flip()
+            clock.tick(60)
+        else:
+            pygame.quit()
+GameScreen().start()
