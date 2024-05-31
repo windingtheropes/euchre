@@ -456,6 +456,7 @@ class Round:
             # trick is disposable so cards dont matter to be deleted
             winner: Trick_result = Trick(self.trump, self.players, self.start_index).run_trick().winner()
             player: EuchrePlayer = self.find_player_by_id(winner.id)
+            print(f"{player.name} wins the trick with {winner.card.format()}")
             # the winner of the trick plays next
             self.start_index = indexOf(self.find_player_by_id(player.id), self.players)
             self.trick_scores[player.team] += 1      
