@@ -26,31 +26,66 @@ def font(font, size):
     return pygame.font.SysFont(font, size)
 
 class Button:
-    def __init__(self):
-        self.button = pygame.draw.rect(screen, pygame.Color(0,0,0), pygame.Rect(50,50,50,50))
+    def __init__(self, locx, locy):
+        self.locx = locx
+        self.locy = locy
+        self.posx = 0 #100
+        self.posy = 0 #100
+        self.wid = 300
+        self.hei = 50
+        self.button = pygame.draw.rect(self.surf, pygame.Color(0,0,0), pygame.Rect(self.posx,self.posy,self.wid,self.hei))
         self.is_click = False
         
     def is_hover(self):
         mx, my = pygame.mouse.get_pos()
-        if((my <= self.button.bottom) and (my >= self.button.top)) and ((mx >= self.button.left) and (mx <= self.button.right)):
+        # get relative position by subtract the expected locy and locx on screen, given at creation
+        if((my-self.locy <= self.button.bottom) and (my-self.locy >= self.button.top)) and ((mx-self.locx >= self.button.left) and (mx-self.locx <= self.button.right)):
             return True
         return False
     
     def on_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if(self.is_hover()):
+            if(self.is_hover() == True):
                 self.is_click = True
-        if event.type == pygame.MOUSEBUTTONUP:
+        elif event.type == pygame.MOUSEBUTTONUP:
             self.is_click = False
-            
+                            
     # these functions should be re-implemented as a child class
     def render(self):
+        # layer
+        # surf = pygame.surface.Surface((WIDTH, HEIGHT))
+        text = font("Futura", 32).render(f"{self.text.upper()}|", True, (255,255,255))
+        
         if(self.is_hover()):
-            self.button = pygame.draw.rect(screen, pygame.Color(0,0,255), pygame.Rect(50,50,50,50))
-        if(self.is_click):
-            self.button = pygame.draw.rect(screen, pygame.Color(0,255,0), pygame.Rect(50,50,50,50))            
+            self.button = pygame.draw.rect(self.surf, pygame.Color(10,10,50), pygame.Rect(self.posx,self.posx,self.wid,self.hei))
+        if(self.toggle):
+            self.button = pygame.draw.rect(self.surf, pygame.Color(0,0,100), pygame.Rect(self.posx,self.posx,self.wid,self.hei))          
         else:
-            self.button = pygame.draw.rect(screen, pygame.Color(0,0,0), pygame.Rect(50,50,50,50))
+            self.button = pygame.draw.rect(self.surf, pygame.Color(0,0,0), pygame.Rect(self.posx,self.posx,self.wid,self.hei))
+        self.surf.blit(text, (self.posx,self.posy))
+        return self.surf
+
+
+class Button:
+    def __init__(self, obj):
+        self.obj = obj
+        self.is_click = False
+        
+    def is_hover(self):
+        pass
+    
+    def on_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if(self.is_hover() == True):
+                self.is_click = True
+        elif event.type == pygame.MOUSEBUTTONUP:
+            self.is_click = False
+                            
+    # these functions should be re-implemented as a child class
+    def render(self):
+        screen.blit()
+
+
 
 class Textbox:
     def __init__(self, locx, locy):
@@ -155,17 +190,42 @@ class Textbox:
         self.surf.blit(text, (self.posx,self.posy))
         return self.surf
 
-
+class SuitSelect:
+    def __init__(self, opt=[]):
+        # suit options as array
+        if(len(opt) == 0):
+            print("no options")
+            return
+        self.opt = opt
+        # use ace cards to display suit
+        self.CardDisplay = CardDisplay()
+        display_cards = []
+        for o in self.opt:
+            display_cards.append(EuchreCard(14, o))
+        self.CardDisplay.set_cards(display_cards)
+        
+    def render(self):
+        self.CardDisplay.render()
+        clicked = self.CardDisplay.get_clicked_card()
+        if(clicked):
+            print("hi")
+        pass
 
 class Flow:
     def __init__(self):
         pass;
 def menu():
     screen.fill((255,255,255))
+class CardState:
+    def __init__(self, hover=False, click=False):
+        self.hover = hover
+        self.click = click
 class CardDisplay:
     def __init__(self):
         self.cards = []
         self.card_imgs = []
+        self.coords = []
+        self.states = []
         pass;
     def load(self):
         for card in self.cards:
@@ -173,14 +233,43 @@ class CardDisplay:
             # dimensions of any given card is 222x323, so this is half scale
             c = pygame.transform.scale(c, (222/2,323/2))
             self.card_imgs.append(c)
+    def get_clicked_card(self):
+        for i in range(0, len(self.cards)):
+            state = self.states[i]
+            if state.click == True:
+                return self.cards[i]
+            
+    def event(self, e):
+        for i in range(0, len(self.states)):
+            if e.type == pygame.MOUSEBUTTONDOWN:
+                if(self.states[i].hover == True):
+                    self.states[i].click = True
+            elif e.type == pygame.MOUSEBUTTONUP:
+                self.states[i].click = False
     def render(self):
-        i = 0
+        for e in pygame.event.get(): self.event(e)
+        
+        x = 0
         for cimg in self.card_imgs:
-            screen.blit(cimg, (i,0))
-            i+=222/2
-    def set_cards(self, cards):
+            self.coords.append([(cimg.get_bounding_rect().left+x, cimg.get_bounding_rect().top), (cimg.get_bounding_rect().right+x, cimg.get_bounding_rect().bottom)])
+            screen.blit(cimg, (x,0))
+            x+=222/2
+        for c in range(0, len(self.cards)):
+            coords = self.coords[c]
+            lx, ty = coords[0]
+            rx, by = coords[1]
+            
+            state: CardState = self.states[c]
+            mpx, mpy = pygame.mouse.get_pos()
+    
+            if(mpx >= lx and mpx <= rx) and (mpy >= ty and mpy <= by):
+                state.hover = True
+        
+    def set_cards(self,cards):
         self.cards = cards
         self.card_imgs = []
+        for c in cards:
+            self.states.append(CardState())
         self.load()
         
 class GameScreen:
@@ -191,7 +280,7 @@ class GameScreen:
         # b = Button()
         t = Textbox(100,50)
         # c = CardDisplay()
-        
+        ss = SuitSelect([1,2])
         running = True
         while running:
             for event in pygame.event.get():
@@ -206,6 +295,8 @@ class GameScreen:
             screen.blit(t.render(), (100,50))
             # c.set_cards([EuchreCard(King,Hearts), EuchreCard(10, Clubs), EuchreCard(9, Spades), EuchreCard(Jack, Clubs)])
             # c.render()
+            ss.render()
+        
             pygame.display.flip()
             clock.tick(60)
         else:
