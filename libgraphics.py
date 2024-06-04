@@ -179,6 +179,10 @@ class GameScreen:
     def __init__(self):
         self.game = Game()
         self.sequence = [MainScreen(), PlayerSelectScreen(self.game), PregameScreen()]
+        # pregame: menu -> players -> splash
+        # game: deal -> preround 1 up to x4 -> maybe preround 2 up to x4 -> trick round x4 -> postround score page
+        # postgame: winning team
+        self.game_sequence = []
         self.vi = 0;
         self.view: Flow = self.sequence[self.vi];
         pass
