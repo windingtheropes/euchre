@@ -259,6 +259,7 @@ class Game:
         self.deck = Deck(cards=[Ace,9,10,Jack,Queen,King], suits=[Clubs, Diamonds, Hearts, Spades], card=EuchreCard)
         self.scores = [0,0]
         self.round = None;
+        self.dealer_index = 0;
         self.players = []
         print("libeuchre by jack anderson")
         
@@ -293,7 +294,11 @@ class Game:
             if score >= 10:
                 return [True, i]
         return [False]       
-     
+    # 
+    def next_dealer(self):
+        self.round = Round(deck=self.deck, players=self.players, dealer_index=self.dealer_index)
+        self.dealer_index += 1
+        self.dealer_index = findex(self.dealer_index, self.players)
     def start(self):
         # start the game
         i = 0
@@ -375,6 +380,7 @@ class Round:
     def __init__(self, deck: Deck, players, dealer_index):
         self.dealer_index = dealer_index
         self.start_index = self.dealer_index+1
+        self.player_turn_index = self.start_index
         self.players = players
         self.dealer = self.players[self.dealer_index]
 
@@ -392,6 +398,25 @@ class Round:
                 player.dealer = True
             else: 
                 player.dealer = False
+    # call on preround 1
+    def pr1_call(self, player:EuchrePlayer, alone:bool):
+        self.caller = player
+        # scenario where must go alone will be forced if it is applicable
+        self.caller_alone = self.must_go_alone() or alone
+    # return array of callable suits
+    def callable_suits(self):
+        trumpopt = []
+        for suit in [Clubs, Diamonds, Hearts, Spades]:
+            if suit == self.kitty.cards[0].suit:
+                continue
+            else:
+                trumpopt.append(suit)
+        return trumpopt
+    # call on preround 2
+    def pr2_call(self, player:EuchrePlayer, suit, alone=False):
+        self.caller=player
+        self.caller_alone = alone
+        self.trump = suit
         
     # deal 5 cards to each player
     def deal_cards(self):
@@ -412,7 +437,10 @@ class Round:
         # turn up first card of kiddy
         self.kitty.cards[0].visible = True  
         print(f"The top card of the kitty is {self.kitty.cards[0].format()}")
+    def next_pr1_turn(self):
         
+        self.player_turn_index += 1
+        self.player_turn_index = findex(self.player_turn_index, self.players)
     # call to pick up or pass
     def preround(self):
         # start at player next to the dealer

@@ -429,7 +429,7 @@ class GameScreen:
                     running = False
             self.view.render()
             pygame.display.flip()
-            clock.tick(60)
+            clock.tick(24)
         else:
             pygame.quit()
 GameScreen().start()
