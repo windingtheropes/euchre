@@ -107,6 +107,7 @@ class MainScreen(Flow):
             if e.key == pygame.K_RETURN:
                 self.alive = False
                 return
+
 class PlayerSelectScreen(Flow):
     def __init__(self, game):
         self.alive = True
@@ -141,19 +142,43 @@ class PlayerSelectScreen(Flow):
     def event(self, e):
         if e.type == pygame.KEYDOWN:
             if e.key == pygame.K_RETURN:
-                if(self.player +1 <= 4):
+                if(self.player <= 4):
                     controlled = self.selectedButton == 1
                     self.game.add_player(EuchrePlayer(name=f"Player {self.player}",controlled=controlled))
-                    self.player+=1
+                    print(f"player {self.player} added")
+                    if(self.player+1 > 4):
+                        self.alive = False
+                    else: 
+                        self.player+=1
                 else:
                     self.alive = False
             if e.key == pygame.K_LEFT or e.key == pygame.K_RIGHT:
                 self.selectedButton = flip(self.selectedButton)
+class PregameScreen(Flow):
+    def __init__(self):
+        self.alive = True
+        pass
+    def render(self):
+        screen.fill((255,255,255))
+        
+        euchreTitle = futura128.render("Euchre", True, (0,0,0))
+        offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
+        
+        playButton = futura64.render("Press Enter to continue", True, (0,50,255))
+        offsetblit(playButton, screen, x=(WIDTH/2), y=(HEIGHT/2)+250)
+        
+        pass;
+    def event(self, e):
+        if e.type == pygame.KEYDOWN:
+            if e.key == pygame.K_RETURN:
+                print("Pregame exit")
+                self.alive = False
+                return
 
 class GameScreen:
     def __init__(self):
         self.game = Game()
-        self.sequence = [MainScreen(), PlayerSelectScreen(self.game)]
+        self.sequence = [MainScreen(), PlayerSelectScreen(self.game), PregameScreen()]
         self.vi = 0;
         self.view: Flow = self.sequence[self.vi];
         pass
@@ -164,9 +189,8 @@ class GameScreen:
             if(self.view.alive == False):
                 self.vi += 1;
                 if(self.vi > len(self.sequence)-1): 
-                    for i in self.game.players:
-                        print(f"{i.name} {i.controlled}")
-                    print("Sequence fulfilled.")
+                    # NO MORE VIEWS
+                    pass
                 else:
                     self.view = self.sequence[self.vi]
                 
