@@ -1,11 +1,11 @@
 import pygame
-from helpers import flip
-from libeuchre import Game, EuchrePlayer
+from helpers import flip, findex
+from libeuchre import Game, EuchrePlayer, Round
 
 pygame.init()
 
-WIDTH = 1536
-HEIGHT = 864
+WIDTH = 1382
+HEIGHT = 778
 screen = pygame.display.set_mode((WIDTH,HEIGHT))
 clock = pygame.time.Clock()
 pygame.display.set_caption("Euchre")
@@ -15,6 +15,7 @@ def font(font, size):
 futura128 = font("Futura", 128)
 futura64 = font("Futura", 64)
 futura48 = font("Futura", 48)
+futura32 = font("Futura", 32)
 
 class Button:
     def __init__(self, obj, coords=(0,0)):
@@ -64,7 +65,8 @@ class CardDisplay:
         for cimg in self.card_imgs:
             screen.blit(cimg, (x,self.y))
             x+=self.width/2
-        
+    def event(self, e):
+        pass
     def set_cards(self,cards):
         self.cards = cards
         self.card_imgs = []
@@ -175,29 +177,251 @@ class PregameScreen(Flow):
                 self.alive = False
                 return
 
+class EnterSplash(Flow):
+    def __init__(self, text=""):
+        self.text = text;
+        self.alive = True
+        
+    def render(self):
+        screen.fill((255,255,255))
+        
+        euchreTitle = futura48.render(self.text, True, (0,0,0))
+        offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
+        
+        playButton = futura64.render("Press Enter to continue", True, (0,50,255))
+        offsetblit(playButton, screen, x=(WIDTH/2), y=(HEIGHT/2)+250)
+        
+    def event(self, e):
+        if e.type == pygame.KEYDOWN:
+            if e.key == pygame.K_RETURN:
+                self.alive = False
+                return
+class Preround1Screen(Flow):
+    def __init__(self, screen):
+        self.screen = screen
+        self.alive = True
+        self.result = None;
+        # 1 is call 0 is pass
+        self.selectedButton = 0;
+    def render(self):
+        
+        euchreTitle = futura48.render(f"Player {self.screen.game.players[findex(self.screen.player_rot_i, self.screen.game.players)].name}", True, (0,0,0))
+        offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
+        instructions = futura32.render(f"Use arrow keys to select, then press enter", True, (0,0,0))
+        offsetblit(instructions, screen, x=(WIDTH/2), y=(HEIGHT/2)+50)
+        
+        kittyTitle = futura32.render("Kitty", True, (0,0,0))
+        screen.blit(kittyTitle, (0, (HEIGHT/2)-50))
+        
+        kd = CardDisplay((0, HEIGHT/2))
+        kd.set_cards([self.screen.game.round.kitty.cards[0]])
+        kd.render()
+        
+        handTitle = futura32.render("Your hand:", True, (0,0,0))
+        screen.blit(handTitle, (0, 0))
+        
+        c = CardDisplay((0,50))
+        print(findex(self.screen.player_rot_i, self.screen.game.players))
+        c.set_cards(self.screen.game.players[findex(self.screen.player_rot_i, self.screen.game.players)].hand.cards)
+        c.render()
+        
+        handTitle = futura32.render(f"{self.screen.game.round.dealer.name} dealt.", True, (0,0,0))
+        screen.blit(handTitle, (WIDTH-handTitle.get_width(), 0))
+        
+        callButton = futura48.render("Call", True, (0,0,0))
+        passButton = futura48.render("Pass", True, (0,0,0))
+
+        if(self.selectedButton == 1):
+            callButton = futura48.render("Call", True, (0,0,0),(255,0,50))
+        elif(self.selectedButton == 0):
+            passButton = futura48.render("Pass", True, (0,0,0),(0,255,100))
+        
+        
+        screen.blit(passButton, (WIDTH-passButton.get_width(), HEIGHT-passButton.get_height()))
+        screen.blit(callButton, (0, HEIGHT-callButton.get_height()))
+    def event(self, e):
+        if e.type == pygame.KEYDOWN:
+            if e.key == pygame.K_LEFT or e.key == pygame.K_RIGHT:
+                self.selectedButton = flip(self.selectedButton)
+            if e.key == pygame.K_RETURN:
+                print("hey")
+                if self.selectedButton == 0:
+                    self.alive = False
+                    self.result = 0
+                elif self.selectedButton == 1:
+                    self.alive = False;
+                    self.result = 1
+          
+class Preround2Screen(Flow):
+    def __init__(self, screen):
+        self.screen = screen
+        
+class  PreroundScreen(Flow):
+    def __init__(self, game):
+        self.game: Game = game;
+        self.alive = True
+        self.card_display = CardDisplay()
+        
+        # meta round
+        self.round_init = True
+        self.dealer_rot_i = 0;
+        
+        # round
+        self.player_rot_i = self.dealer_rot_i+1;
+        
+        self.preround1_alive = True
+        self.preround1_i = 0;
+        self.preround_1_screen = Preround1Screen(self)
+
+    def init__round(self):
+        if self.round_init == True:
+            self.game.round = Round(self.game.deck, self.game.players, findex(self.dealer_rot_i, self.game.players))
+            self.game.deck.shuffle()
+            self.game.round.deal()
+            self.dealer_rot_i += 1;
+        self.round_init = False
+    
+    def preround1(self):
+        if(self.preround1_alive == True):
+            self.preround_1_screen.render() 
+        if(self.game.players[findex(self.player_rot_i, self.game.players)].id != self.game.round.dealer.id) and self.preround_1_screen.alive == False and self.preround1_i < 3:
+            if(self.preround_1_screen.result == 1):
+                print(f"{self.player_rot_i} calls.")
+            else:
+                print("pass")
+            self.preround1_i += 1
+            self.player_rot_i += 1
+            self.preround_1_screen.alive = True
+        elif(self.game.players[findex(self.player_rot_i, self.game.players)].id == self.game.round.dealer.id) and self.preround_1_screen.alive == False and self.preround1_i == 3:
+            if(self.preround_1_screen.result == 1):
+                print("dealer calls")
+            else:
+                print("dealer pass, so need preround2")
+            self.preround1_alive = False       
+    def render(self):
+        self.init__round()
+        screen.fill((255,255,255))
+        
+        self.preround1()    
+        
+        
+    def event(self,e):
+        if(self.preround_1_screen.alive == True):
+            self.preround_1_screen.event(e)
+    # def event(self, e):
+    #     if e.type == pygame.KEYDOWN:
+    #         if e.key == pygame.K_RETURN:
+    #             print("preround 1 exit")
+    #             self.alive = False
+    #             return
+  
+
+class RoundScreen(Flow):
+    def __init__(self, game):
+        self.game: Game = game;
+        self.alive = True
+        self.card_display = CardDisplay()
+        
+        pass
+    def render(self):
+        screen.fill((255,255,255))
+        
+        euchreTitle = futura48.render("Euchre Preround", True, (0,0,0))
+        offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
+        
+        playButton = futura64.render("Press Enter to continue", True, (0,50,255))
+        offsetblit(playButton, screen, x=(WIDTH/2), y=(HEIGHT/2)+250)
+        
+        
+        pass;
+    def event(self, e):
+        if e.type == pygame.KEYDOWN:
+            if e.key == pygame.K_RETURN:
+                print("preround 1 exit")
+                self.alive = False
+                return
+class EndroundScreen(Flow):
+    def __init__(self, game):
+        self.game: Game = game;
+        self.alive = True
+        self.card_display = CardDisplay()
+        
+        pass
+    def render(self):
+        screen.fill((255,255,255))
+        
+        euchreTitle = futura48.render("Euchre Preround", True, (0,0,0))
+        offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
+        
+        playButton = futura64.render("Press Enter to continue", True, (0,50,255))
+        offsetblit(playButton, screen, x=(WIDTH/2), y=(HEIGHT/2)+250)
+        
+        
+        pass;
+    def event(self, e):
+        if e.type == pygame.KEYDOWN:
+            if e.key == pygame.K_RETURN:
+                print("preround 1 exit")
+                self.alive = False
+                return
+class EndgameScreen(Flow):
+    def __init__(self, game):
+        self.game: Game = game;
+        self.alive = True
+        self.card_display = CardDisplay()
+        
+        pass
+    def render(self):
+        screen.fill((255,255,255))
+        
+        euchreTitle = futura48.render("Euchre Preround", True, (0,0,0))
+        offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
+        
+        playButton = futura64.render("Press Enter to continue", True, (0,50,255))
+        offsetblit(playButton, screen, x=(WIDTH/2), y=(HEIGHT/2)+250)
+        
+        
+        pass;
+    def event(self, e):
+        if e.type == pygame.KEYDOWN:
+            if e.key == pygame.K_RETURN:
+                print("preround 1 exit")
+                self.alive = False
+                return
+
+
 class GameScreen:
     def __init__(self):
         self.game = Game()
-        self.sequence = [MainScreen(), PlayerSelectScreen(self.game), PregameScreen()]
+        self.sequence = 0;
+        self.si = 0;
+        self.end_of_sequence = False
+        self.sequences = [[MainScreen(), PlayerSelectScreen(self.game), PregameScreen()], [PreroundScreen(self.game), RoundScreen(self.game), EndroundScreen(self.game)], [EndgameScreen(self.game)]]
         # pregame: menu -> players -> splash
         # game: deal -> preround 1 up to x4 -> maybe preround 2 up to x4 -> trick round x4 -> postround score page
-        # postgame: winning team
-        self.game_sequence = []
-        self.vi = 0;
-        self.view: Flow = self.sequence[self.vi];
+        # postgame: winning teams
+        self.view: Flow = self.sequences[self.sequence][self.si];
         pass
     def start(self):
         running = True
         while running:
             # progress to next screen in sequence
             if(self.view.alive == False):
-                self.vi += 1;
-                if(self.vi > len(self.sequence)-1): 
-                    # NO MORE VIEWS
-                    pass
+                if(self.si > len(self.sequences[self.sequence])-1): 
+                    self.end_of_sequence = True
+                    print("end of sequence")
                 else:
-                    self.view = self.sequence[self.vi]
+                    self.end_of_sequence = False
+                    self.view = self.sequences[self.sequence][self.si]
+                self.si += 1;
+            if(self.end_of_sequence == True):
+                self.si = 0;
+                self.sequence += 1;
+                self.end_of_sequence = False
+                if(self.sequence > len(self.sequences)-1):
+                    print("no more sequences")
                 
+                    
             for event in pygame.event.get():
                 # close window if pressed close
                 self.view.event(event)

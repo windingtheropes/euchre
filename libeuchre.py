@@ -258,8 +258,8 @@ class Game:
     def __init__(self):
         self.deck = Deck(cards=[Ace,9,10,Jack,Queen,King], suits=[Clubs, Diamonds, Hearts, Spades], card=EuchreCard)
         self.scores = [0,0]
+        self.round = None;
         self.players = []
-        
         print("libeuchre by jack anderson")
         
     # configure player names, teams, control
@@ -300,8 +300,8 @@ class Game:
         while not self.check_win()[0]:
             # rotate through players for dealers until a team wins
             dealer_index = findex(i, self.players)
-            round = Round(deck=self.deck, players=self.players, dealer_index=dealer_index)
-            res: RoundResult = round.run()
+            self.round = Round(deck=self.deck, players=self.players, dealer_index=dealer_index)
+            res: RoundResult = self.round.run()
             self.scores[res.winning_team] += res.points
             i+=1
         print(f"Team {self.check_win()[1]} wins.")
@@ -407,7 +407,6 @@ class Round:
         # deal cards to players
         self.deal_cards();
         
-        # CONCLUSION: PLAYERS SEEM TO BE HOLDING THE SAME HAND
         # add remainder of cards to kiddy
         self.deck.dump(self.kitty)
         # turn up first card of kiddy
@@ -446,6 +445,11 @@ class Round:
                 self.caller = player
                 self.caller_alone = result.alone
                 return
+            
+    def must_go_alone(self, player):
+        if(player.team == self.dealer.team):
+            return True
+        return False
     
     def find_player_by_id(self, id):
         for player in self.players:
@@ -478,6 +482,7 @@ class Round:
         self.playround()
         self.postround()
         
+    def get_score(self):    
         # points calculator
         for t in range(0,2):
             # if team t won the round
