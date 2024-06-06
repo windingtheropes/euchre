@@ -382,13 +382,14 @@ class Round:
         self.start_index = self.dealer_index+1
         self.player_turn_index = self.start_index
         self.players = players
-        self.dealer = self.players[self.dealer_index]
-
+        self.dealer: EuchrePlayer = self.players[self.dealer_index]
+        
         self.deck: Deck = deck
         self.kitty = EuchreHand()
         self.trick_scores = [0,0]
         self.trump = None;
         self.caller: EuchrePlayer = None;
+        self.called_on_round =  0;
         self.test = [];
         self.caller_alone: bool = False 
         
@@ -402,7 +403,15 @@ class Round:
     def pr1_call(self, player:EuchrePlayer, alone:bool):
         self.caller = player
         # scenario where must go alone will be forced if it is applicable
-        self.caller_alone = self.must_go_alone() or alone
+        self.caller_alone = self.must_go_alone(player) or alone
+        self.called_on_round = 1
+        self.trump = self.kitty.cards[0].suit
+    # dealer picks up based on call or themself
+    def pickup(self, discard: EuchreCard):
+        self.dealer.hand.add_card(self.kitty.cards[0])
+        self.kitty.remove_card(self.kitty.cards[0])
+        self.dealer.hand.remove_card(discard)
+        
     # return array of callable suits
     def callable_suits(self):
         trumpopt = []
@@ -417,6 +426,7 @@ class Round:
         self.caller=player
         self.caller_alone = alone
         self.trump = suit
+        self.called_on_round = 2
         
     # deal 5 cards to each player
     def deal_cards(self):
