@@ -1,5 +1,5 @@
 import pygame
-from helpers import flip, findex, floop
+from helpers import flip, findex
 from libeuchre import Game, EuchrePlayer, Round
 
 pygame.init()
@@ -75,8 +75,9 @@ class CardDisplay:
         if(self.selectable == True):
             if(e.type == pygame.KEYDOWN):
                 if(e.key == pygame.K_RIGHT):
-                    self.selected = findex(self.selected+1, self.cards)
-
+                    self.selected = findex(self.selected+1, self.cards, cap=True)
+                if(e.key == pygame.K_LEFT):
+                    self.selected = findex(self.selected-1, self.cards, ignore_negatives=True)
                     
     def set_cards(self,cards):
         self.cards = cards
@@ -285,7 +286,7 @@ class Preround1Screen(Flow):
         kd.set_cards([self.screen.game.round.kitty.cards[0]])
         kd.render()
         
-        handTitle = futura32.render("Your hand:", True, (0,0,0))
+        handTitle = futura32.render("Your hand", True, (0,0,0))
         screen.blit(handTitle, (0, 0))
         
         c = CardDisplay((0,50))
@@ -323,6 +324,7 @@ class Preround1Screen(Flow):
 class PickupScreen(Flow):
     def __init__(self, screen):
         self.screen = screen
+        self.game: Game = self.screen.game
         self.alive = True
         self.result = None;
         self.player: EuchrePlayer = None;
@@ -333,8 +335,8 @@ class PickupScreen(Flow):
         self.selectedButton = 0;
         
     def initialize(self):
-        self.player = self.screen.game.round.dealer
-        self.kitty_display.set_cards([self.screen.game.round.kitty.cards[0]])
+        self.player = self.game.round.dealer
+        self.kitty_display.set_cards([self.game.round.kitty.cards[0]])
         self.hand_display.set_cards(self.player.hand.cards)
         
     def render(self):
@@ -344,7 +346,7 @@ class PickupScreen(Flow):
     
         euchreTitle = futura48.render(f"{self.player.name}", True, (0,0,0))
         offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
-        instructions1 = futura32.render(f"Picking up {self.screen.game.round.kitty.cards[0].format()}. Must discard a card.", True, (0,0,0))
+        instructions1 = futura32.render(f"Picking up {self.game.round.kitty.cards[0].format()}. Must discard a card.", True, (0,0,0))
         offsetblit(instructions1, screen, x=(WIDTH/2), y=(HEIGHT/2)+50)
         instructions2 = futura32.render(f"Use arrow keys to select a discard, then press enter", True, (0,0,0))
         offsetblit(instructions2, screen, x=(WIDTH/2), y=(HEIGHT/2)+100)
@@ -360,12 +362,16 @@ class PickupScreen(Flow):
         
         self.hand_display.render()
         
-        handTitle = futura32.render(f"{self.screen.game.round.dealer.name} dealt.", True, (0,0,0))
+        handTitle = futura32.render(f"{self.game.round.dealer.name} dealt.", True, (0,0,0))
         screen.blit(handTitle, (WIDTH-handTitle.get_width(), 0))
         
         
     def event(self, e):
         self.hand_display.event(e)
+        if(e.type == pygame.KEYDOWN):
+            if(e.key == pygame.K_RETURN):
+                self.game.round.pickup(self.game.round.dealer.hand.cards[self.hand_display.selected])
+                self.alive = False
       
           
 class Preround2Screen(Flow):
@@ -438,15 +444,20 @@ class PreroundScreen(Flow):
         if(self.game.round.called_on_round == 1):
             self.pickup_active = True
     def pickup(self):
+        if(self.pickup_screen.alive == False):
+            self.pickup_active = False;
         if(self.pickup_active == True):
-            self.pickup_screen.render()        
+            self.pickup_screen.render()   
+
     def render(self):
         self.init__round()
         screen.fill((255,255,255))
         
         
         self.preround1()
-        self.pickup()   
+        # this will only run if preround1 needs it to
+        self.pickup()  
+        print(f"trump is {self.game.round.trump}") 
         # self.preround2() 
 
         
@@ -454,7 +465,7 @@ class PreroundScreen(Flow):
     def event(self,e):
         if(self.pickupround_screen.alive == True):
             self.pickupround_screen.event(e)
-        if(self.pickup_screen.alive == True):
+        if(self.pickup_active == True):
             self.pickup_screen.event(e)
     # def event(self, e):
     #     if e.type == pygame.KEYDOWN:
