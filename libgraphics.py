@@ -332,13 +332,14 @@ class PreroundScreen(Flow):
         self.card_display = CardDisplay()
         
         # meta round
-        self.round_init = True
+        self.round_initialized = False
         self.dealer_rot_i = 0;
         
         # round
         self.player_rot_i = self.dealer_rot_i+1;
         
         # pickup call round
+        # meta active, prerender
         self.pickupround_active = True
         self.preround1_i = 0;
         self.pickupround_screen = Preround1Screen(self)
@@ -354,19 +355,21 @@ class PreroundScreen(Flow):
         # will need to parse result of call
         
     def init__round(self):
-        if self.round_init == True:
+        # initialize the round, deck
+        if self.round_initialized == False:
             self.game.round = Round(self.game.deck, self.game.players, findex(self.dealer_rot_i, self.game.players))
             self.game.deck.shuffle()
             self.game.round.deal()
             self.dealer_rot_i += 1;
             
-        self.round_init = False
+        self.round_initialized = True
     
     def preround1(self):
         if(self.pickupround_active == True):
             self.pickupround_screen.render() 
         if(self.pickupround_screen.alive == False):
             player = self.game.players[findex(self.player_rot_i, self.game.players)]    
+            # player is not dealer, not on 4th player so not the dealer
             if(player.id != self.game.round.dealer.id) and self.preround1_i < 3:
                 if(self.pickupround_screen.result == 1):
                     # a player calls
@@ -383,7 +386,7 @@ class PreroundScreen(Flow):
                     self.player_rot_i += 1
                     self.pickupround_screen.alive = True
                 
-                    
+            # player is dealer on 3rd round and that makes sense :)
             elif(player.id == self.game.round.dealer.id) and self.preround1_i == 3:
                 if(self.pickupround_screen.result == 1):
                     # dealer calls to pick up
@@ -523,6 +526,7 @@ class GameScreen:
                     self.end_of_sequence = False
                     self.view = self.sequences[self.sequence][self.si]
                 self.si += 1;
+            # progress to the next set of screens (new sequence)
             if(self.end_of_sequence == True):
                 self.si = 0;
                 self.sequence += 1;
