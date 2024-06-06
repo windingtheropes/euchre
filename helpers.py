@@ -12,19 +12,21 @@ def clear():
     else:
         system("clear")
 # take a number as input, force it within range of f
-def floop(n, f):
-    if(f == 0): return 0
-    max = f
-    if n > f:
-        return floop(n-max, f)
-    else:
-        return n
+# def floop(n, f):
+#     if(f == 0): return 0
+#     max = f
+#     if n > f:
+#         return floop(n-max, f)
+#     else:
+#         return n
 # take a number as input, make sure it fits inside the index of arr given
 def findex(ind, arr):
     if(len(arr) == 0): return 0
     maxi = len(arr)-1
     if ind > maxi:
         return findex((ind-maxi)-1, arr)
+    elif ind < 0:
+        return findex(abs(ind), arr)
     else:
         return ind
     
