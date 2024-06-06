@@ -251,12 +251,112 @@ class Preround1Screen(Flow):
                 elif self.selectedButton == 1:
                     self.alive = False;
                     self.result = 1
+       
+class Preround1Screen(Flow):
+    def __init__(self, screen):
+        self.screen = screen
+        self.alive = True
+        self.result = None;
+        # 1 is call 0 is pass
+        self.selectedButton = 0;
+    def render(self):
+        player = self.screen.game.players[findex(self.screen.player_rot_i, self.screen.game.players)]
+        
+        euchreTitle = futura48.render(f"Player {player.name}", True, (0,0,0))
+        offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
+        instructions = futura32.render(f"Use arrow keys to select, then press enter", True, (0,0,0))
+        offsetblit(instructions, screen, x=(WIDTH/2), y=(HEIGHT/2)+50)
+        
+        kittyTitle = futura32.render("Kitty", True, (0,0,0))
+        screen.blit(kittyTitle, (0, (HEIGHT/2)-50))
+        
+        kd = CardDisplay((0, HEIGHT/2))
+        kd.set_cards([self.screen.game.round.kitty.cards[0]])
+        kd.render()
+        
+        handTitle = futura32.render("Your hand:", True, (0,0,0))
+        screen.blit(handTitle, (0, 0))
+        
+        c = CardDisplay((0,50))
+        c.set_cards(player.hand.cards)
+        c.render()
+        
+        handTitle = futura32.render(f"{self.screen.game.round.dealer.name} dealt.", True, (0,0,0))
+        screen.blit(handTitle, (WIDTH-handTitle.get_width(), 0))
+        
+        callButton = futura48.render("Call", True, (0,0,0))
+        passButton = futura48.render("Pass", True, (0,0,0))
+
+        if(self.selectedButton == 1):
+            callButton = futura48.render("Call", True, (0,0,0),(255,0,50))
+        elif(self.selectedButton == 0):
+            passButton = futura48.render("Pass", True, (0,0,0),(0,255,100))
+        
+        
+        screen.blit(passButton, (WIDTH-passButton.get_width(), HEIGHT-passButton.get_height()))
+        screen.blit(callButton, (0, HEIGHT-callButton.get_height()))
+    def event(self, e):
+        if e.type == pygame.KEYDOWN:
+            if e.key == pygame.K_LEFT or e.key == pygame.K_RIGHT:
+                self.selectedButton = flip(self.selectedButton)
+            if e.key == pygame.K_RETURN:
+                if self.selectedButton == 0:
+                    # pass
+                    self.alive = False
+                    self.result = 0
+                elif self.selectedButton == 1:
+                    # call to pickup
+                    self.alive = False;
+                    self.result = 1
+                 
+class PickupScreen(Flow):
+    def __init__(self, screen):
+        self.screen = screen
+        self.alive = True
+        self.result = None;
+        
+        # 1 is call 0 is pass
+        self.selectedButton = 0;
+    def render(self):
+        player = self.screen.game.round.dealer
+        euchreTitle = futura48.render(f"{player.name}", True, (0,0,0))
+        offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
+        instructions1 = futura32.render(f"Picking up {self.screen.game.round.kitty.cards[0].format()}. Must discard a card.", True, (0,0,0))
+        offsetblit(instructions1, screen, x=(WIDTH/2), y=(HEIGHT/2)+50)
+        instructions2 = futura32.render(f"Use arrow keys to select a discard, then press enter", True, (0,0,0))
+        offsetblit(instructions2, screen, x=(WIDTH/2), y=(HEIGHT/2)+100)
+        
+        kittyTitle = futura32.render("Kitty", True, (0,0,0))
+        screen.blit(kittyTitle, (0, (HEIGHT/2)-50))
+        
+        kd = CardDisplay((0, HEIGHT/2))
+        kd.set_cards([self.screen.game.round.kitty.cards[0]])
+        kd.render()
+        
+        handTitle = futura32.render("Your hand:", True, (0,0,0))
+        screen.blit(handTitle, (0, 0))
+        
+        c = CardDisplay((0,50))
+        c.set_cards(player.hand.cards)
+        c.render()
+        
+        handTitle = futura32.render(f"{self.screen.game.round.dealer.name} dealt.", True, (0,0,0))
+        screen.blit(handTitle, (WIDTH-handTitle.get_width(), 0))
+        
+        
+    def event(self, e):
+        if e.type == pygame.KEYDOWN:
+            if e.key == pygame.K_LEFT or e.key == pygame.K_RIGHT:
+                pass
+            if e.key == pygame.K_RETURN:
+                pass
+      
           
 class Preround2Screen(Flow):
     def __init__(self, screen):
         self.screen = screen
         
-class  PreroundScreen(Flow):
+class PreroundScreen(Flow):
     def __init__(self, game):
         self.game: Game = game;
         self.alive = True
@@ -269,45 +369,68 @@ class  PreroundScreen(Flow):
         # round
         self.player_rot_i = self.dealer_rot_i+1;
         
-        self.preround1_alive = True
+        # pickup call round
+        self.pickupround_active = True
         self.preround1_i = 0;
-        self.preround_1_screen = Preround1Screen(self)
-
+        self.pickupround_screen = Preround1Screen(self)
+        
+        # dealer pickup?
+        self.pickup_active = False
+        self.pickup_screen = PickupScreen(self)
+        # we don't actually need to know what card the player discarded
+        
+        
     def init__round(self):
         if self.round_init == True:
             self.game.round = Round(self.game.deck, self.game.players, findex(self.dealer_rot_i, self.game.players))
             self.game.deck.shuffle()
             self.game.round.deal()
             self.dealer_rot_i += 1;
+            
         self.round_init = False
     
     def preround1(self):
-        if(self.preround1_alive == True):
-            self.preround_1_screen.render() 
-        if(self.game.players[findex(self.player_rot_i, self.game.players)].id != self.game.round.dealer.id) and self.preround_1_screen.alive == False and self.preround1_i < 3:
-            if(self.preround_1_screen.result == 1):
-                print(f"{self.player_rot_i} calls.")
-            else:
-                print("pass")
-            self.preround1_i += 1
-            self.player_rot_i += 1
-            self.preround_1_screen.alive = True
-        elif(self.game.players[findex(self.player_rot_i, self.game.players)].id == self.game.round.dealer.id) and self.preround_1_screen.alive == False and self.preround1_i == 3:
-            if(self.preround_1_screen.result == 1):
-                print("dealer calls")
-            else:
-                print("dealer pass, so need preround2")
-            self.preround1_alive = False       
+        if(self.pickupround_active == True):
+            self.pickupround_screen.render() 
+        if(self.pickupround_screen.alive == False):
+            player = self.game.players[findex(self.player_rot_i, self.game.players)]    
+            if(player.id != self.game.round.dealer.id) and self.preround1_i < 3:
+                if(self.pickupround_screen.result == 1):
+                    # a player calls
+                    self.game.round.pr1_call(player, False)
+                else:
+                    # a player passes
+                    pass
+                self.preround1_i += 1
+                self.player_rot_i += 1
+                self.pickupround_screen.alive = True
+            elif(player.id == self.game.round.dealer.id) and self.preround1_i == 3:
+                if(self.pickupround_screen.result == 1):
+                    # dealer calls to pick up
+                    self.game.round.pr1_call(player, False)
+                else:
+                    # dealer passes and preround 2 is needed
+                    pass
+                self.pickupround_active = False   
+        if(self.game.round.called_on_round == 1):
+            self.pickup_active = True
+    def pickup(self):
+        if(self.pickup_active == True):
+            self.pickup_screen.render()        
     def render(self):
         self.init__round()
         screen.fill((255,255,255))
         
-        self.preround1()    
+        
+        self.preround1()
+        self.pickup()   
+        # self.preround2() 
+
         
         
     def event(self,e):
-        if(self.preround_1_screen.alive == True):
-            self.preround_1_screen.event(e)
+        if(self.pickupround_screen.alive == True):
+            self.pickupround_screen.event(e)
     # def event(self, e):
     #     if e.type == pygame.KEYDOWN:
     #         if e.key == pygame.K_RETURN:
