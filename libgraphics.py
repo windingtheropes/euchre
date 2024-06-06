@@ -70,7 +70,9 @@ class CardDisplay:
             screen.blit(cimg, (x,self.y))
             x+=self.width/2
         if(self.selectable == True):
+            # indicate selected card by a red line under it
             pygame.draw.rect(screen, (255,0,0), pygame.Rect(self.x+(self.selected*(222/2)),self.y+(323/2),(222/2),10))
+    # if the selectable trait is true, arrow keys will change selected card
     def event(self, e):
         if(self.selectable == True):
             if(e.type == pygame.KEYDOWN):
@@ -185,7 +187,6 @@ class PregameScreen(Flow):
     def event(self, e):
         if e.type == pygame.KEYDOWN:
             if e.key == pygame.K_RETURN:
-                print("Pregame exit")
                 self.alive = False
                 return
 
@@ -321,7 +322,9 @@ class PickupScreen(Flow):
 class Preround2Screen(Flow):
     def __init__(self, screen):
         self.screen = screen
-        
+    def event(e):
+        pass
+# screen to handle all preround  
 class PreroundScreen(Flow):
     def __init__(self, game):
         self.game: Game = game;
