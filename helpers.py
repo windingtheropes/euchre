@@ -20,13 +20,21 @@ def clear():
 #     else:
 #         return n
 # take a number as input, make sure it fits inside the index of arr given
-def findex(ind, arr):
+def findex(ind, arr, ignore_negatives=False, cap=False):
     if(len(arr) == 0): return 0
     maxi = len(arr)-1
     if ind > maxi:
-        return findex((ind-maxi)-1, arr)
+        # cap: return max index and don't loop
+        if(cap == True):
+            return maxi
+        else:
+            return findex((ind-maxi)-1, arr)
     elif ind < 0:
-        return findex(abs(ind), arr)
+        # ignore negatives: just return 0
+        if(ignore_negatives == True):
+            return 0
+        else:
+            return findex(abs(ind), arr)
     else:
         return ind
     
