@@ -1,5 +1,5 @@
 import pygame
-from helpers import flip, findex
+from helpers import flip, findex, floop
 from libeuchre import Game, EuchrePlayer, Round
 
 pygame.init()
@@ -46,8 +46,10 @@ class Button:
         screen.blit(self.obj, (self.x, self.y))
 
 class CardDisplay:
-    def __init__(self, coords=(0,0)):
+    def __init__(self, coords=(0,0), selectable=False):
         self.cards = []
+        self.selectable = selectable
+        self.selected = 0;
         self.x, self.y = coords
         self.width = 222;
         self.height = 323;
@@ -60,13 +62,22 @@ class CardDisplay:
             self.card_imgs.append(c)
             
     def render(self):
-        for e in pygame.event.get(): self.event(e)
+        # for e in pygame.event.get(): self.event(e)
         x = self.x
-        for cimg in self.card_imgs:
+        # print(self.selected)
+        for i in range(0, len(self.card_imgs)):
+            cimg = self.card_imgs[i]
             screen.blit(cimg, (x,self.y))
             x+=self.width/2
+        if(self.selectable == True):
+            pygame.draw.rect(screen, (255,0,0), pygame.Rect(self.x+(self.selected*(222/2)),self.y+(323/2),(222/2),10))
     def event(self, e):
-        pass
+        if(self.selectable == True):
+            if(e.type == pygame.KEYDOWN):
+                if(e.key == pygame.K_RIGHT):
+                    self.selected = findex(self.selected+1, self.cards)
+
+                    
     def set_cards(self,cards):
         self.cards = cards
         self.card_imgs = []
@@ -314,12 +325,24 @@ class PickupScreen(Flow):
         self.screen = screen
         self.alive = True
         self.result = None;
-        
+        self.player: EuchrePlayer = None;
+        self.hand_display = CardDisplay((0,50), selectable=True)
+        self.kitty_display = CardDisplay((0, HEIGHT/2))
         # 1 is call 0 is pass
+        self.initialized = False
         self.selectedButton = 0;
+        
+    def initialize(self):
+        self.player = self.screen.game.round.dealer
+        self.kitty_display.set_cards([self.screen.game.round.kitty.cards[0]])
+        self.hand_display.set_cards(self.player.hand.cards)
+        
     def render(self):
-        player = self.screen.game.round.dealer
-        euchreTitle = futura48.render(f"{player.name}", True, (0,0,0))
+        if(self.initialized == False):
+            self.initialize()
+            self.initialized = True
+    
+        euchreTitle = futura48.render(f"{self.player.name}", True, (0,0,0))
         offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
         instructions1 = futura32.render(f"Picking up {self.screen.game.round.kitty.cards[0].format()}. Must discard a card.", True, (0,0,0))
         offsetblit(instructions1, screen, x=(WIDTH/2), y=(HEIGHT/2)+50)
@@ -329,27 +352,20 @@ class PickupScreen(Flow):
         kittyTitle = futura32.render("Kitty", True, (0,0,0))
         screen.blit(kittyTitle, (0, (HEIGHT/2)-50))
         
-        kd = CardDisplay((0, HEIGHT/2))
-        kd.set_cards([self.screen.game.round.kitty.cards[0]])
-        kd.render()
+        
+        self.kitty_display.render()
         
         handTitle = futura32.render("Your hand:", True, (0,0,0))
         screen.blit(handTitle, (0, 0))
         
-        c = CardDisplay((0,50))
-        c.set_cards(player.hand.cards)
-        c.render()
+        self.hand_display.render()
         
         handTitle = futura32.render(f"{self.screen.game.round.dealer.name} dealt.", True, (0,0,0))
         screen.blit(handTitle, (WIDTH-handTitle.get_width(), 0))
         
         
     def event(self, e):
-        if e.type == pygame.KEYDOWN:
-            if e.key == pygame.K_LEFT or e.key == pygame.K_RIGHT:
-                pass
-            if e.key == pygame.K_RETURN:
-                pass
+        self.hand_display.event(e)
       
           
 class Preround2Screen(Flow):
@@ -401,9 +417,16 @@ class PreroundScreen(Flow):
                 else:
                     # a player passes
                     pass
-                self.preround1_i += 1
-                self.player_rot_i += 1
-                self.pickupround_screen.alive = True
+                
+                # the player just called, cut the round
+                if(self.game.round.called_on_round != 1):
+                    print("called")
+                    self.preround1_i += 1
+                    self.player_rot_i += 1
+                    self.pickupround_screen.alive = True
+                else:
+                    self.pickupround_active = False
+                    
             elif(player.id == self.game.round.dealer.id) and self.preround1_i == 3:
                 if(self.pickupround_screen.result == 1):
                     # dealer calls to pick up
@@ -431,6 +454,8 @@ class PreroundScreen(Flow):
     def event(self,e):
         if(self.pickupround_screen.alive == True):
             self.pickupround_screen.event(e)
+        if(self.pickup_screen.alive == True):
+            self.pickup_screen.event(e)
     # def event(self, e):
     #     if e.type == pygame.KEYDOWN:
     #         if e.key == pygame.K_RETURN:
@@ -552,7 +577,7 @@ class GameScreen:
                     running = False
             self.view.render()
             pygame.display.flip()
-            clock.tick(24)
+            clock.tick(75)
         else:
             pygame.quit()
 GameScreen().start()
