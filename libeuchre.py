@@ -39,6 +39,7 @@ def offsuit(trump):
 class EuchreCard(Card):
     def __init__(self, c, s):
         Card.__init__(self, c, s);
+        self.visible = True
     # based on trump give a heirarchical representation of the card relative to suit
     # meaning
     # non trump: 9=1, 10=2, jack: 3, queen: 4, king: 5, ace: 6
@@ -399,6 +400,8 @@ class Round:
                 player.dealer = True
             else: 
                 player.dealer = False
+    def turnover_kitty(self):
+        self.kitty.cards[0].visible = False
     # call on preround 1
     def pr1_call(self, player:EuchrePlayer, alone:bool):
         self.caller = player
@@ -424,12 +427,13 @@ class Round:
                 trumpopt.append(suit)
         return trumpopt
     # call on preround 2
-    def pr2_call(self, player:EuchrePlayer, suit, alone=False):
+    def pr2_call(self, player:EuchrePlayer, alone=False):
         self.caller=player
         self.caller_alone = alone
-        self.trump = suit
         self.called_on_round = 2
-        
+    def pr2_select_suit(self, suit):
+        self.trump = suit
+    
     # deal 5 cards to each player
     def deal_cards(self):
         for a in range(0,5):
@@ -447,6 +451,8 @@ class Round:
         # add remainder of cards to kiddy
         self.deck.dump(self.kitty)
         # turn up first card of kiddy
+        for card in self.kitty.cards:
+            card.visible = False
         self.kitty.cards[0].visible = True  
         print(f"The top card of the kitty is {self.kitty.cards[0].format()}")
     def next_pr1_turn(self):
