@@ -220,7 +220,7 @@ class Preround1Screen(Flow):
     def render(self):
         player = self.screen.game.players[findex(self.screen.player_rot_i, self.screen.game.players)]
         
-        euchreTitle = futura48.render(f"Player {player.name}", True, (0,0,0))
+        euchreTitle = futura48.render(f"{player.name}", True, (0,0,0))
         offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
         instructions = futura32.render(f"Use arrow keys to select, then press enter", True, (0,0,0))
         offsetblit(instructions, screen, x=(WIDTH/2), y=(HEIGHT/2)+50)
@@ -367,7 +367,8 @@ class PreroundScreen(Flow):
     def preround1(self):
         if(self.pickupround_active == True):
             self.pickupround_screen.render() 
-        if(self.pickupround_screen.alive == False):
+        # if the pickupround screen is finished, but the pickupround results havent been handled yet, as indicated by self.pickupround_active
+        if(self.pickupround_screen.alive == False and self.pickupround_active == True):
             player = self.game.players[findex(self.player_rot_i, self.game.players)]    
             # player is not dealer, not on 4th player so not the dealer
             if(player.id != self.game.round.dealer.id) and self.preround1_i < 3:

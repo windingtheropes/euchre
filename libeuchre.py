@@ -406,11 +406,13 @@ class Round:
         self.caller_alone = self.must_go_alone(player) or alone
         self.called_on_round = 1
         self.trump = self.kitty.cards[0].suit
+        
     # dealer picks up based on call or themself
     def pickup(self, discard: EuchreCard):
         self.dealer.hand.add_card(self.kitty.cards[0])
         self.kitty.remove_card(self.kitty.cards[0])
         self.dealer.hand.remove_card(discard)
+        self.kitty.add_card(discard)
         
     # return array of callable suits
     def callable_suits(self):
