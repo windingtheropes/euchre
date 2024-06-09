@@ -648,34 +648,35 @@ class PlayerTrickSelectScreen(Flow):
         
         
     def event(self, e):
-        self.hand_display.event(e)
+        self.selectable_display.event(e)
         if(e.type == pygame.KEYDOWN):
             if(e.key == pygame.K_RETURN):
-                self.game.round.pickup(self.game.round.dealer.hand.cards[self.hand_display.selected])
+                # add the card to the trick pile
+                self.screen.trick.add_card(self.player.hand.cards[self.selectable_display.selected], self.player)
                 self.alive = False
         
 class TrickScreen(Flow):
     def __init__(self, screen):
-        self.screen = screen
+        self.screen: RoundScreen = screen
         self.game: Game = self.screen.game
         self.alive = True
         self.result: Trick_result = None;
-        self.player: EuchrePlayer = None;
         self.trick_display = CardDisplay((0, 50))
-        self.trick = Trick(self.game.round.trump, self.game.players, self.game.round.dealer_index+1)
+        self.trick = None;
         self.initialized = False
         self.player_turn_i = 0;
-        self.lead = False
+        
+        self.trick_turn_screen_active = True;
+        self.trick_turn_screen = PlayerTrickSelectScreen(self)
         
     def initialize(self):
-        self.player = self.screen.leader
-        if(self.screen.trick_i == 0):
-            # player is leading
-            self.selectable_display.set_cards([self.player.hand.cards])
-        else:
-            # self.selectable_display.set_cards([self.trick.])
-            pass
-        self.hand_display.set_cards(self.player.hand.cards)
+        self.trick = Trick(self.game.round.trump, self.game.players, self.screen.lead_player_index)
+        
+    def check_end(self):
+        if(self.player_turn_i > 3):
+            # when the trick is done, call on the trick to get winner info
+            self.result = self.trick.winner()
+            self.alive = False
         
     def render(self):
         if(self.initialized == False):
@@ -688,14 +689,15 @@ class TrickScreen(Flow):
         handTitle = futura32.render("Trick pile:", True, (0,0,0))
         screen.blit(handTitle, (0, 0))
         
+        self.trick_display.set_cards(self.trick.cards)
         self.trick_display.render()
         
+        self.trick_turn_screen.render()
+        
+        self.check_end()
+        
     def event(self, e):
-        self.hand_display.event(e)
-        if(e.type == pygame.KEYDOWN):
-            if(e.key == pygame.K_RETURN):
-                self.game.round.pickup(self.game.round.dealer.hand.cards[self.hand_display.selected])
-                self.alive = False
+        self.trick_turn_screen.event(e)
              
 
 class RoundScreen(Flow):
@@ -737,7 +739,9 @@ class RoundScreen(Flow):
                 # within bounds of trick round
                 self.lead_player_index = indexOf(winning_player, self.game.players)
                 self.trick_i += 1
-                pass
+                #reactivate the new trick screen
+                self.trick_screen.alive = True
+                # need to reset its state
             else:
                 self.trick_screen_active = False
     def render(self):
