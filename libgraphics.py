@@ -340,7 +340,7 @@ class SelectTrumpScreen(Flow):
         
     def initialize(self):
         self.player = self.game.players[self.screen.player_rot_i]
-        self.choices_display.set_cards([self.game.round.kitty.cards[0]])
+        self.choices_display.set_cards(self.game.round.callable_suits(as_cards=True))
         self.hand_display.set_cards(self.player.hand.cards)
         
     def render(self):
