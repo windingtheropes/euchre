@@ -339,7 +339,7 @@ class SelectTrumpScreen(Flow):
         # self.selectedButton = 0;
         
     def initialize(self):
-        self.player = self.game.players[self.screen.player_rot_i]
+        self.player = self.game.players[findex(self.screen.player_rot_i, self.game.players)]
         self.choices_display.set_cards(self.game.round.callable_suits(as_cards=True))
         self.hand_display.set_cards(self.player.hand.cards)
         
@@ -352,14 +352,14 @@ class SelectTrumpScreen(Flow):
         offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
         instructions1 = futura32.render(f"Calling trump.", True, (0,0,0))
         offsetblit(instructions1, screen, x=(WIDTH/2), y=(HEIGHT/2)+50)
-        instructions2 = futura32.render(f"Use arrow keys to select a trump suit, then press enter", True, (0,0,0))
+        instructions2 = futura32.render(f"Use arrow keys to select a suit, then press enter", True, (0,0,0))
         offsetblit(instructions2, screen, x=(WIDTH/2), y=(HEIGHT/2)+100)
         
         kittyTitle = futura32.render("Options", True, (0,0,0))
         screen.blit(kittyTitle, (0, (HEIGHT/2)-50))
         
         
-        self.kitty_display.render()
+        self.choices_display.render()
         
         handTitle = futura32.render("Your hand:", True, (0,0,0))
         screen.blit(handTitle, (0, 0))
@@ -371,10 +371,10 @@ class SelectTrumpScreen(Flow):
         
         
     def event(self, e):
-        self.hand_display.event(e)
+        self.choices_display.event(e)
         if(e.type == pygame.KEYDOWN):
             if(e.key == pygame.K_RETURN):
-                self.game.round.pr2_select_suit(self.game.round.dealer.hand.cards[self.choices_display.selected]) 
+                self.game.round.pr2_select_suit(self.choices_display.cards[self.choices_display.selected].suit) 
                 self.alive = False
  
 class Preround2Screen(Flow):
@@ -557,7 +557,12 @@ class PreroundScreen(Flow):
                 # stuck to dealer
                 self.game.round.pr2_call(player, alone=False)
                 self.preround2_active = False   
-        
+    def select_trump(self):
+        if(self.select_trump_active == True):
+            self.select_trump_screen.render()
+        if(self.select_trump_active == True and self.select_trump_screen.alive == False):
+            self.select_trump_active = False
+            print(f"trump is {self.game.round.trump}")   
     
     def render(self):
         self.init__round()
@@ -567,8 +572,9 @@ class PreroundScreen(Flow):
         self.preround1()
         # this will only run if preround1 needs it to
         self.pickup()  
+        # this will only run if needed
         self.preround2() 
-
+        self.select_trump()
         
         
     def event(self,e):
@@ -578,6 +584,8 @@ class PreroundScreen(Flow):
             self.pickup_screen.event(e)
         if(self.preround2_active == True):
             self.preround2_screen.event(e)
+        if(self.select_trump_active == True):
+            self.select_trump_screen.event(e)
   
 
 class RoundScreen(Flow):
