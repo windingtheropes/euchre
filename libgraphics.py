@@ -1,6 +1,6 @@
 import pygame
 from helpers import flip, findex, indexOf
-from libeuchre import Game, EuchrePlayer, Round, Trick, Trick_result
+from libeuchre import Game, EuchrePlayer, Round, Trick, Trick_result, EuchreCard
 
 pygame.init()
 
@@ -37,17 +37,17 @@ class CardDisplay:
             c = pygame.transform.scale(c, (self.width/2,self.height/2))
             self.card_imgs.append(c)
             
-    def render(self):
+    def render(self, s=screen):
         # for e in pygame.event.get(): self.event(e)
         x = self.x
         # print(self.selected)
         for i in range(0, len(self.card_imgs)):
             cimg = self.card_imgs[i]
-            screen.blit(cimg, (x,self.y))
+            s.blit(cimg, (x,self.y))
             x+=self.width/2
         if(self.selectable == True):
             # indicate selected card by a red line under it
-            pygame.draw.rect(screen, (255,0,0), pygame.Rect(self.x+(self.selected*(222/2)),self.y+(323/2),(222/2),10))
+            pygame.draw.rect(s, (255,0,0), pygame.Rect(self.x+(self.selected*(222/2)),self.y+(323/2),(222/2),10))
     # if the selectable trait is true, arrow keys will change selected card
     def event(self, e):
         if(self.selectable == True):
@@ -502,7 +502,7 @@ class PreroundScreen(Flow):
     def pickup(self):
         if(self.pickup_screen.alive == False):
             self.pickup_active = False;
-        if(self.pickup_active == True):
+        if(self.pickup_active == True and self.pickup_screen.alive == True):
             self.pickup_screen.render()   
 
     def preround2(self):
@@ -535,13 +535,15 @@ class PreroundScreen(Flow):
     
     def select_trump(self):
         print(self.select_trump_active)
-        if(self.select_trump_active == True):
+        if(self.select_trump_active == True and self.select_trump_screen.alive == True):
             self.select_trump_screen.render()
         if(self.select_trump_screen.alive == False):
             self.select_trump_active = False
+            print(self.select_trump_active)
             print(f"trump is {self.game.round.trump}")   
     
     def render(self):
+        
         self.init__round()
         screen.fill((255,255,255))
         
@@ -567,6 +569,7 @@ class PreroundScreen(Flow):
         if(self.select_trump_active == True):
             self.select_trump_screen.event(e)
 
+# keep in mind this is rendering on a display -211 y
 class PlayerTrickSelectScreen(Flow):
     def __init__(self, screen):
         self.screen: TrickScreen = screen
@@ -574,17 +577,23 @@ class PlayerTrickSelectScreen(Flow):
         self.alive = True
         self.result = None;
         self.player: EuchrePlayer = None;
-        self.hand_display = CardDisplay((0,50+250))
-        self.selectable_display = CardDisplay((0, 250+200), selectable=True)
+        self.hand_display = CardDisplay((0,50))
+        self.selectable_display = CardDisplay((0, (HEIGHT/2)), selectable=True)
         # 1 is call 0 is pass
         self.initialized = False
+        self.rel_height = HEIGHT -211
+    def reset(self):
+        self.initialized = False
+        self.player = None
+        self.result = None
+        self.alvie = True
         
     def initialize(self):
-        self.player = self.game.players[findex(self.screen.player_turn_i, self.game.players)]
+        self.player = self.game.players[findex(self.screen.player_turn_i+self.screen.screen.lead_player_index, self.game.players)]
         # leader can play any card
         if(self.screen.player_turn_i == 0):
             self.selectable_display.set_cards(self.player.hand.cards)
-        else:
+        elif(self.screen.player_turn_i < 4):
             lead_card = self.screen.trick.cards[0]
             cards_of_suit = self.player.hand.find_suit(lead_card.suit, self.screen.game.round.trump)
             # must follow suit if suit is found otherwise any card
@@ -594,31 +603,30 @@ class PlayerTrickSelectScreen(Flow):
                 self.selectable_display.set_cards(self.player.hand.cards)
         self.hand_display.set_cards(self.player.hand.cards)
         
-    def render(self):
+    def render(self, s=screen):
         if(self.initialized == False and self.alive == True):
             self.initialize()
             self.initialized = True
     
-        euchreTitle = futura48.render(f"{self.player.name}", True, (0,0,0))
-        offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
+        playerTitle = futura48.render(f"{self.player.name}", True, (0,0,0))
+        offsetblit(playerTitle, s, x=(WIDTH/2), y=(self.rel_height/2))
         instructions1 = futura32.render(f"Select a card to play.", True, (0,0,0))
-        offsetblit(instructions1, screen, x=(WIDTH/2), y=(HEIGHT/2)+50)
+        offsetblit(instructions1, s, x=(WIDTH/2), y=(self.rel_height/2)+50)
         instructions2 = futura32.render(f"Use arrow keys to select a card, then press enter", True, (0,0,0))
-        offsetblit(instructions2, screen, x=(WIDTH/2), y=(HEIGHT/2)+100)
+        offsetblit(instructions2, s, x=(WIDTH/2), y=(self.rel_height/2)+75)
         
-        kittyTitle = futura32.render("Kitty", True, (0,0,0))
-        screen.blit(kittyTitle, (0, (HEIGHT/2)-50))
+        selectableTitle = futura32.render("Selectable Cards", True, (0,0,0))
+        s.blit(selectableTitle, (0, (HEIGHT/2)-50))
         
-        
-        self.selectable_display.render()
+        self.selectable_display.render(s=s)
         
         handTitle = futura32.render("Your hand:", True, (0,0,0))
-        screen.blit(handTitle, (0, 0))
+        s.blit(handTitle, (0, 0))
         
-        self.hand_display.render()
+        self.hand_display.render(s=s)
         
-        handTitle = futura32.render(f"{self.screen.game.players[self.screen.screen.lead_player_index].name} lead.", True, (0,0,0))
-        screen.blit(handTitle, (WIDTH-handTitle.get_width(), 0))
+        leadTitle = futura32.render(f"{self.screen.game.players[self.screen.screen.lead_player_index].name} lead.", True, (0,0,0))
+        s.blit(leadTitle, (WIDTH-leadTitle.get_width(), 0))
         
         
     def event(self, e):
@@ -630,7 +638,7 @@ class PlayerTrickSelectScreen(Flow):
                 self.screen.trick.add_card(selected_card, self.player)
                 self.player.hand.remove_card(selected_card)
                 self.alive = False
-                self.initialized=False
+                self.initialized= False
         
 class TrickScreen(Flow):
     def __init__(self, screen):
@@ -645,40 +653,55 @@ class TrickScreen(Flow):
         
         self.trick_turn_screen_active = True;
         self.trick_turn_screen = PlayerTrickSelectScreen(self)
-        
+    def reset(self):
+        self.initialized = False;
+        self.player_turn_i = 0;
+        self.result = None
+        self.alive = True
+        self.trick_turn_screen.reset()
+
     def initialize(self):
         self.trick = Trick(self.game.round.trump, self.game.players, self.screen.lead_player_index)
         
     def check_end(self):
         if(self.player_turn_i > 3):
+            print('end')
             # when the trick is done, call on the trick to get winner info
             self.result = self.trick.winner()
-            self.trick_turn_screen_active = False
             self.alive = False
+            self.trick_turn_screen_active = False
     
     def check_end_of_play(self):
         if(self.trick_turn_screen.alive == False and self.trick_turn_screen_active == True):
             self.player_turn_i += 1
             self.trick_turn_screen.alive = True
+            print("new play")
         pass   
     def render(self):
         if(self.initialized == False):
             self.initialize()
             self.initialized = True
-    
+        self.check_end()
+        self.check_end_of_play()
+        if(self.alive == False):
+            print("not alive?")
+            return
         
         ## top half is for trick pile
-        # bottom half (y>211) is for player specific
+        # # bottom half (y>211) is for player specific
         handTitle = futura32.render("Trick pile:", True, (0,0,0))
         screen.blit(handTitle, (0, 0))
         
         self.trick_display.set_cards(self.trick.cards)
         self.trick_display.render()
         
-        self.trick_turn_screen.render()
+        # different layer for player turns
+        trick_surf = pygame.surface.Surface((WIDTH, HEIGHT-211))
+        trick_surf.fill((255,255,255))
+        self.trick_turn_screen.render(s=trick_surf)
+        screen.blit(trick_surf, (0,211))
         
-        self.check_end()
-        self.check_end_of_play()
+        
         
     def event(self, e):
         self.trick_turn_screen.event(e)
@@ -708,7 +731,7 @@ class RoundScreen(Flow):
                 self.initialized = True
             
     def trick(self):
-        if(self.trick_screen_active == True):
+        if(self.trick_screen_active == True and self.trick_screen.alive == True):
             self.trick_screen.render()
         if(self.trick_screen_active == True and self.trick_screen.alive == False):
             # receive information from the trick
@@ -729,10 +752,11 @@ class RoundScreen(Flow):
                 self.lead_player_index = indexOf(winning_player, self.game.players)
                 self.trick_i += 1
                 #reactivate the new trick screen
-                self.trick_screen.alive = True
+                self.trick_screen.reset()
                 # need to reset its state
             else:
                 self.trick_screen_active = False
+            
     def render(self):
         self.initialize()
         self.trick()
