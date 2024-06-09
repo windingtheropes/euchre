@@ -418,13 +418,17 @@ class Round:
         self.kitty.add_card(discard)
         
     # return array of callable suits
-    def callable_suits(self):
+    def callable_suits(self, as_cards=False):
         trumpopt = []
         for suit in [Clubs, Diamonds, Hearts, Spades]:
             if suit == self.kitty.cards[0].suit:
                 continue
             else:
-                trumpopt.append(suit)
+                if(as_cards == True):
+                    trumpopt.append(EuchreCard(14, suit))
+                else:
+                    trumpopt.append(suit)
+        
         return trumpopt
     # call on preround 2
     def pr2_call(self, player:EuchrePlayer, alone=False):
