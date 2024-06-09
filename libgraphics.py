@@ -1,5 +1,5 @@
 import pygame
-from helpers import flip, findex
+from helpers import flip, findex, indexOf
 from libeuchre import Game, EuchrePlayer, Round
 
 pygame.init()
@@ -323,7 +323,60 @@ class PickupScreen(Flow):
             if(e.key == pygame.K_RETURN):
                 self.game.round.pickup(self.game.round.dealer.hand.cards[self.hand_display.selected])
                 self.alive = False
-         
+                
+class SelectTrumpScreen(Flow):
+    def __init__(self, screen):
+        self.screen = screen
+        self.game: Game = self.screen.game
+        self.alive = True
+        # follows suit enum
+        self.result = None;
+        self.player: EuchrePlayer = None;
+        self.hand_display = CardDisplay((0,50))
+        self.choices_display = CardDisplay((0, HEIGHT/2), selectable=True)
+        # 1 is call 0 is pass
+        self.initialized = False
+        # self.selectedButton = 0;
+        
+    def initialize(self):
+        self.player = self.game.players[self.screen.player_rot_i]
+        self.choices_display.set_cards([self.game.round.kitty.cards[0]])
+        self.hand_display.set_cards(self.player.hand.cards)
+        
+    def render(self):
+        if(self.initialized == False):
+            self.initialize()
+            self.initialized = True
+    
+        euchreTitle = futura48.render(f"{self.player.name}", True, (0,0,0))
+        offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
+        instructions1 = futura32.render(f"Calling trump.", True, (0,0,0))
+        offsetblit(instructions1, screen, x=(WIDTH/2), y=(HEIGHT/2)+50)
+        instructions2 = futura32.render(f"Use arrow keys to select a trump suit, then press enter", True, (0,0,0))
+        offsetblit(instructions2, screen, x=(WIDTH/2), y=(HEIGHT/2)+100)
+        
+        kittyTitle = futura32.render("Options", True, (0,0,0))
+        screen.blit(kittyTitle, (0, (HEIGHT/2)-50))
+        
+        
+        self.kitty_display.render()
+        
+        handTitle = futura32.render("Your hand:", True, (0,0,0))
+        screen.blit(handTitle, (0, 0))
+        
+        self.hand_display.render()
+        
+        handTitle = futura32.render(f"{self.game.round.dealer.name} dealt.", True, (0,0,0))
+        screen.blit(handTitle, (WIDTH-handTitle.get_width(), 0))
+        
+        
+    def event(self, e):
+        self.hand_display.event(e)
+        if(e.type == pygame.KEYDOWN):
+            if(e.key == pygame.K_RETURN):
+                self.game.round.pr2_select_suit(self.game.round.dealer.hand.cards[self.choices_display.selected]) 
+                self.alive = False
+ 
 class Preround2Screen(Flow):
     def __init__(self, screen):
         self.screen = screen
@@ -331,6 +384,7 @@ class Preround2Screen(Flow):
         self.result = None;
         # 1 is call 0 is pass
         self.selectedButton = 0;
+        
     def render(self):
         player = self.screen.game.players[findex(self.screen.player_rot_i, self.screen.game.players)]
         
@@ -359,6 +413,11 @@ class Preround2Screen(Flow):
         callButton = futura48.render("Call", True, (0,0,0))
         passButton = futura48.render("Pass", True, (0,0,0))
 
+        if(player.id == self.screen.game.round.dealer.id):
+            print("dealer, must call")
+            self.result = 1
+            self.alive = False
+            
         if(self.selectedButton == 1):
             callButton = futura48.render("Call", True, (0,0,0),(255,0,50))
         elif(self.selectedButton == 0):
@@ -372,6 +431,7 @@ class Preround2Screen(Flow):
             if e.key == pygame.K_LEFT or e.key == pygame.K_RIGHT:
                 self.selectedButton = flip(self.selectedButton)
             if e.key == pygame.K_RETURN:
+                print("herer")
                 if self.selectedButton == 0:
                     # pass
                     self.alive = False
@@ -412,7 +472,8 @@ class PreroundScreen(Flow):
         self.preround2_screen = Preround2Screen(self)
         # will need to parse result of call
         self.select_trump_active = False
-        self.select_trump_screen = None;
+        self.select_trump_screen = SelectTrumpScreen(self);
+        self.preround2_i = 0
         
     def init__round(self):
         # initialize the round, deck
@@ -421,6 +482,7 @@ class PreroundScreen(Flow):
             self.game.deck.shuffle()
             self.game.round.deal()
             self.dealer_rot_i += 1;
+            print(self.game.players[self.dealer_rot_i].name)
             
         self.round_initialized = True
     
@@ -455,7 +517,9 @@ class PreroundScreen(Flow):
                 else:
                     # dealer passes and preround 2 is needed
                     self.game.round.turnover_kitty()
-                    self.player_rot_i = self.dealer_rot_i+1;
+                    # pass current dealer index
+                    self.player_rot_i = self.game.round.dealer_index+1;
+                    print(self.game.players[self.player_rot_i].name)
                     self.preround2_active = True
                 self.pickupround_active = False   
         if(self.game.round.called_on_round == 1):
@@ -467,34 +531,33 @@ class PreroundScreen(Flow):
             self.pickup_screen.render()   
 
     def preround2(self):
+        if(self.game.round.called_on_round == 2):
+            self.preround2_active = False
+            self.select_trump_active = True
         if(self.preround2_active == True):
             self.preround2_screen.render()
-            if(self.game.round.called_on_round == 0):
-                player = self.game.players[findex(self.player_rot_i, self.game.players)]    
-                # player is not dealer, not on 4th player so not the dealer
-                if(player.id != self.game.round.dealer.id) and self.preround1_i < 3:
-                    if(self.pickupround_screen.result == 1):
-                        # a player calls
-                        self.game.round.pr2_call(player, alone=False)
-                    else:
-                        # a player passes
-                        pass
-                    
-                    # the player just called, cut the round
-                    if(self.game.round.called_on_round == 2):
-                        self.preround2_active = False
-                    else:
-                        self.preround1_i += 1
-                        self.player_rot_i += 1
-                        self.preround2_screen.alive = True
-                    
-                # player is dealer on 3rd round and that makes sense :)
-                elif(player.id == self.game.round.dealer.id) and self.preround1_i == 3:
-                    # stuck to dealer
+        if(self.preround2_screen.alive == False and self.preround2_active == True):
+            player = self.game.players[findex(self.player_rot_i, self.game.players)]    
+            # player is not dealer, not on 4th player so not the dealer
+            if(player.id != self.game.round.dealer.id) and self.preround2_i < 3:
+                if(self.pickupround_screen.result == 1):
+                    # a player calls
                     self.game.round.pr2_call(player, alone=False)
-                    self.preround2_active = False   
-            if(self.game.round.called_on_round == 2):
-                self.select_trump_active = True
+                    self.preround2_active = False
+                else:
+                    self.preround2_i += 1
+                    self.player_rot_i += 1
+                    self.preround2_screen.alive = True
+                    # a player passes
+                
+                print(self.player_rot_i)
+
+            # player is dealer on 3rd round and that makes sense :)
+            elif(player.id == self.game.round.dealer.id) and self.preround2_i == 3:
+                # stuck to dealer
+                self.game.round.pr2_call(player, alone=False)
+                self.preround2_active = False   
+        
     
     def render(self):
         self.init__round()
@@ -504,7 +567,6 @@ class PreroundScreen(Flow):
         self.preround1()
         # this will only run if preround1 needs it to
         self.pickup()  
-        print(f"trump is {self.game.round.trump}") 
         self.preround2() 
 
         
