@@ -64,7 +64,6 @@ class CardDisplay:
    
 class Flow:
     def __init__(self):
-        self.alive = True
         pass
     def render(self):
         pass
@@ -311,7 +310,8 @@ class SelectTrumpScreen(Flow):
         # self.selectedButton = 0;
         
     def initialize(self):
-        self.player = self.game.players[findex(self.screen.player_rot_i, self.game.players)]
+        self.player = self.game.players[indexOf(self.game.round.caller, self.game.players)]
+        print(self.game.round.caller.name)
         self.choices_display.set_cards(self.game.round.callable_suits(as_cards=True))
         self.hand_display.set_cards(self.player.hand.cards)
         
@@ -406,7 +406,6 @@ class Preround2Screen(Flow):
             if e.key == pygame.K_LEFT or e.key == pygame.K_RIGHT:
                 self.selectedButton = flip(self.selectedButton)
             if e.key == pygame.K_RETURN:
-                print("herer")
                 if self.selectedButton == 0:
                     # pass
                     self.alive = False
@@ -508,14 +507,15 @@ class PreroundScreen(Flow):
     def preround2(self):
         if(self.game.round.called_on_round == 2):
             self.preround2_active = False
+            self.select_trump_active = True
             # self.select_trump_active = True
-        if(self.preround2_active == True):
+        if(self.preround2_active == True and self.preround2_screen.alive == True and self.game.round.called_on_round == 0):
             self.preround2_screen.render()
-        if(self.preround2_screen.alive == False and self.preround2_active == True):
+        if(self.preround2_screen.alive == False and self.preround2_active == True and self.game.round.called_on_round == 0):
             player = self.game.players[findex(self.player_rot_i, self.game.players)]    
             # player is not dealer, not on 4th player so not the dealer
             if(player.id != self.game.round.dealer.id) and self.preround2_i < 3:
-                if(self.pickupround_screen.result == 1):
+                if(self.preround2_screen.result == 1):
                     # a player calls
                     self.game.round.pr2_call(player, alone=False)
                     self.preround2_active = False
@@ -532,14 +532,12 @@ class PreroundScreen(Flow):
                 self.game.round.pr2_call(player, alone=False)
                 self.preround2_active = False   
                 self.select_trump_active = True
-    
+        
     def select_trump(self):
-        print(self.select_trump_active)
         if(self.select_trump_active == True and self.select_trump_screen.alive == True):
             self.select_trump_screen.render()
         if(self.select_trump_screen.alive == False):
             self.select_trump_active = False
-            print(self.select_trump_active)
             print(f"trump is {self.game.round.trump}")   
     
     def render(self):
@@ -552,6 +550,7 @@ class PreroundScreen(Flow):
         # this will only run if preround1 needs it to
         self.pickup()  
         # this will only run if needed
+       
         self.preround2() 
         self.select_trump()
         
@@ -586,9 +585,10 @@ class PlayerTrickSelectScreen(Flow):
         self.initialized = False
         self.player = None
         self.result = None
-        self.alvie = True
+        self.alive = True
         
     def initialize(self):
+        print(self.screen.player_turn_i)
         self.player = self.game.players[findex(self.screen.player_turn_i+self.screen.screen.lead_player_index, self.game.players)]
         # leader can play any card
         if(self.screen.player_turn_i == 0):
@@ -604,7 +604,7 @@ class PlayerTrickSelectScreen(Flow):
         self.hand_display.set_cards(self.player.hand.cards)
         
     def render(self, s=screen):
-        if(self.initialized == False and self.alive == True):
+        if(self.initialized == False):
             self.initialize()
             self.initialized = True
     
@@ -634,7 +634,7 @@ class PlayerTrickSelectScreen(Flow):
         if(e.type == pygame.KEYDOWN):
             if(e.key == pygame.K_RETURN):
                 # add the card to the trick pile
-                selected_card =self.player.hand.cards[self.selectable_display.selected]
+                selected_card = self.player.hand.cards[indexOf(self.selectable_display.cards[self.selectable_display.selected], self.player.hand.cards)]
                 self.screen.trick.add_card(selected_card, self.player)
                 self.player.hand.remove_card(selected_card)
                 self.alive = False
@@ -655,8 +655,9 @@ class TrickScreen(Flow):
         self.trick_turn_screen = PlayerTrickSelectScreen(self)
     def reset(self):
         self.initialized = False;
+        # self.trick.cards =[]
         self.player_turn_i = 0;
-        self.result = None
+        # self.result = None
         self.alive = True
         self.trick_turn_screen.reset()
 
@@ -664,25 +665,29 @@ class TrickScreen(Flow):
         self.trick = Trick(self.game.round.trump, self.game.players, self.screen.lead_player_index)
         
     def check_end(self):
-        if(self.player_turn_i > 3):
+        if(self.player_turn_i < 4 and self.trick_turn_screen_active == True and self.trick_turn_screen.alive == False):
             print('end')
             # when the trick is done, call on the trick to get winner info
             self.result = self.trick.winner()
-            self.alive = False
+            self.alive = False 
             self.trick_turn_screen_active = False
+            # self.trick_turn_screen.alive = False
     
     def check_end_of_play(self):
         if(self.trick_turn_screen.alive == False and self.trick_turn_screen_active == True):
             self.player_turn_i += 1
+            print(self.player_turn_i)
+            print("end of play?")
             self.trick_turn_screen.alive = True
-            print("new play")
         pass   
     def render(self):
         if(self.initialized == False):
             self.initialize()
             self.initialized = True
-        self.check_end()
+        
         self.check_end_of_play()
+        self.check_end()
+        
         if(self.alive == False):
             print("not alive?")
             return
@@ -716,8 +721,9 @@ class RoundScreen(Flow):
         self.lead_player_index = None;
         self.initialized = False
         
-        self.trick_screen_active = True;
+        self.trick_screen_active = False;
         self.trick_screen = TrickScreen(self);
+        self.trick_screen.alive = False;
         pass
     def initialize(self):
         if(self.initialized == False):
@@ -729,6 +735,8 @@ class RoundScreen(Flow):
                 self.trick_i = 0
                 self.lead_player_index = indexOf(self.game.round.find_player_by_id(self.trick_screen.result.id), self.game.players)
                 self.initialized = True
+            self.trick_screen_active = True
+            self.trick_screen.alive = True
             
     def trick(self):
         if(self.trick_screen_active == True and self.trick_screen.alive == True):
