@@ -17,34 +17,6 @@ futura64 = font("Futura", 64)
 futura48 = font("Futura", 48)
 futura32 = font("Futura", 32)
 
-class Button:
-    def __init__(self, obj, coords=(0,0)):
-        self.obj = obj
-        self.rect = obj.get_rect()
-        self.x, self.y = coords
-        self.is_click = False
-        
-    def is_hover(self):
-        ty, lx = self.rect.topleft
-        by, rx = self.rect.bottomright
-        
-        mx, my = pygame.mouse.get_pos()
-        
-        if(ty+self.y <= my and my <= by+self.y) and (lx+self.x <= mx and mx <= rx+self.x):
-            return True
-        return False
-    
-    def on_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if(self.is_hover() == True):
-                self.is_click = True
-        elif event.type == pygame.MOUSEBUTTONUP:
-            self.is_click = False
-                            
-    # these functions should be re-implemented as a child class
-    def render(self):
-        screen.blit(self.obj, (self.x, self.y))
-
 class CardDisplay:
     def __init__(self, coords=(0,0), selectable=False):
         self.cards = []
