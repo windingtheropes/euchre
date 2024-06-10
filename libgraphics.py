@@ -60,6 +60,7 @@ class CardDisplay:
     def set_cards(self,cards):
         self.cards = cards
         self.card_imgs = []
+        self.selected = 0
         self.load()
    
 class Flow:
@@ -654,39 +655,39 @@ class TrickScreen(Flow):
         self.trick_turn_screen_active = True;
         self.trick_turn_screen = PlayerTrickSelectScreen(self)
     def reset(self):
-        self.initialized = False;
-        # self.trick.cards =[]
+        self.trick = Trick(self.game.round.trump, self.game.players, self.screen.lead_player_index)
         self.player_turn_i = 0;
-        # self.result = None
+        self.result = None
         self.alive = True
+        self.trick_turn_screen_active = True
         self.trick_turn_screen.reset()
+        
 
     def initialize(self):
         self.trick = Trick(self.game.round.trump, self.game.players, self.screen.lead_player_index)
         
     def check_end(self):
-        if(self.player_turn_i < 4 and self.trick_turn_screen_active == True and self.trick_turn_screen.alive == False):
-            print('end')
+        if(self.player_turn_i > 3 and self.trick_turn_screen_active == True):
             # when the trick is done, call on the trick to get winner info
+            print("end of trick!!")
             self.result = self.trick.winner()
             self.alive = False 
             self.trick_turn_screen_active = False
-            # self.trick_turn_screen.alive = False
+            self.trick_turn_screen.alive = False
     
     def check_end_of_play(self):
         if(self.trick_turn_screen.alive == False and self.trick_turn_screen_active == True):
+            print("increment player")
             self.player_turn_i += 1
-            print(self.player_turn_i)
-            print("end of play?")
-            self.trick_turn_screen.alive = True
-        pass   
+            self.trick_turn_screen.alive = True   
+            
     def render(self):
         if(self.initialized == False):
             self.initialize()
             self.initialized = True
-        
-        self.check_end_of_play()
         self.check_end()
+        self.check_end_of_play()
+        # self.check_end()
         
         if(self.alive == False):
             print("not alive?")
@@ -755,15 +756,19 @@ class RoundScreen(Flow):
             # do stuff
             # 5 cards in a hand so 5 tricks
             # 4 is 5
-            if(self.trick_i < 5):
+            self.trick_i += 1
+            if(self.trick_i <= 4):
+                
                 # within bounds of trick round
                 self.lead_player_index = indexOf(winning_player, self.game.players)
-                self.trick_i += 1
+                # self.trick_i += 1
                 #reactivate the new trick screen
                 self.trick_screen.reset()
                 # need to reset its state
             else:
+                # 5 cards have been played; round over
                 self.trick_screen_active = False
+                self.alive = False
             
     def render(self):
         self.initialize()
@@ -785,7 +790,7 @@ class EndroundScreen(Flow):
     def render(self):
         screen.fill((255,255,255))
         
-        euchreTitle = futura48.render("Euchre Preround", True, (0,0,0))
+        euchreTitle = futura48.render("Euchre Endround", True, (0,0,0))
         offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
         
         playButton = futura64.render("Press Enter to continue", True, (0,50,255))

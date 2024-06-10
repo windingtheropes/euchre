@@ -80,7 +80,10 @@ class EuchreHand(Hand):
         ofsuit = []     
         for card in self.cards:
             if(card.card == Jack):
-                if(card.suit == suit or card.suit == offsuit(trump)):
+                # skip the jack if it's the left and suit is offsuit, (jack of spades is not a spade when clubs is trump)
+                if(offsuit(trump) == suit):
+                    continue
+                elif(trump ==  suit and card.suit == suit or card.suit == offsuit(trump)):
                     ofsuit.append(card)
             elif(card.suit == suit):
                 ofsuit.append(card)
