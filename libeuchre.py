@@ -289,6 +289,12 @@ class Game:
     def add_player(self, player):
         if(len(self.players) >= 4) or (player in self.players):
             return
+        
+        if(len(self.players) == 0):
+            player.team = 0
+        else:
+            prev_player = self.players[len(self.players)-1]
+            player.team = flip(prev_player.team)
         self.players.append(player)
         
     # check if there's a winning team
