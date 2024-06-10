@@ -589,7 +589,6 @@ class PlayerTrickSelectScreen(Flow):
         self.alive = True
         
     def initialize(self):
-        print(self.screen.player_turn_i)
         self.player = self.game.players[findex(self.screen.player_turn_i+self.screen.screen.lead_player_index, self.game.players)]
         # leader can play any card
         if(self.screen.player_turn_i == 0):
@@ -669,7 +668,6 @@ class TrickScreen(Flow):
     def check_end(self):
         if(self.player_turn_i > 3 and self.trick_turn_screen_active == True):
             # when the trick is done, call on the trick to get winner info
-            print("end of trick!!")
             self.result = self.trick.winner()
             self.alive = False 
             self.trick_turn_screen_active = False
@@ -677,7 +675,6 @@ class TrickScreen(Flow):
     
     def check_end_of_play(self):
         if(self.trick_turn_screen.alive == False and self.trick_turn_screen_active == True):
-            print("increment player")
             self.player_turn_i += 1
             self.trick_turn_screen.alive = True   
             
@@ -690,7 +687,6 @@ class TrickScreen(Flow):
         # self.check_end()
         
         if(self.alive == False):
-            print("not alive?")
             return
         
         ## top half is for trick pile
@@ -706,9 +702,7 @@ class TrickScreen(Flow):
         trick_surf.fill((255,255,255))
         self.trick_turn_screen.render(s=trick_surf)
         screen.blit(trick_surf, (0,211))
-        
-        
-        
+    
     def event(self, e):
         self.trick_turn_screen.event(e)
 
@@ -744,27 +738,19 @@ class RoundScreen(Flow):
             self.trick_screen.render()
         if(self.trick_screen_active == True and self.trick_screen.alive == False):
             # receive information from the trick
-            # winning card
-            # winning player
-            # trcikresult class
             res: Trick_result = self.trick_screen.result
-            winning_player = self.game.round.find_player_by_id(res.id)
+            winning_player:EuchrePlayer = self.game.round.find_player_by_id(res.id)
             winning_card = res.card
-            
-            # once a player wins, they go next
-            # trick ended
-            # do stuff
-            # 5 cards in a hand so 5 tricks
-            # 4 is 5
+
+            # every trick one gives an internal score to the corresponding team
+            print(winning_player.team)
+            # increase trick by 1
             self.trick_i += 1
+            self.lead_player_index = indexOf(winning_player, self.game.players)
+            
             if(self.trick_i <= 4):
-                
-                # within bounds of trick round
-                self.lead_player_index = indexOf(winning_player, self.game.players)
-                # self.trick_i += 1
                 #reactivate the new trick screen
                 self.trick_screen.reset()
-                # need to reset its state
             else:
                 # 5 cards have been played; round over
                 self.trick_screen_active = False
@@ -784,9 +770,7 @@ class EndroundScreen(Flow):
     def __init__(self, game):
         self.game: Game = game;
         self.alive = True
-        self.card_display = CardDisplay()
         
-        pass
     def render(self):
         screen.fill((255,255,255))
         
@@ -809,8 +793,7 @@ class EndgameScreen(Flow):
         self.game: Game = game;
         self.alive = True
         self.card_display = CardDisplay()
-        
-        pass
+    
     def render(self):
         screen.fill((255,255,255))
         
