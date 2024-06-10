@@ -524,14 +524,16 @@ class Round:
             # the winner of the trick plays next
             self.start_index = indexOf(self.find_player_by_id(player.id), self.players)
             self.trick_scores[player.team] += 1      
-        pass
+
     # postround: clear hands and clear the deck
     def postround(self):
         for plr in self.players:
             plr.hand.clear()
         self.kitty.clear()
         self.deck.relinquish()
-        pass
+        for card in self.deck.cards:
+            card.visible = True
+        
     def run(self):
         print(f"{self.players[self.dealer_index].name} is dealing.")
         self.deck.shuffle()

@@ -1,6 +1,6 @@
 import pygame
 from helpers import flip, findex, indexOf
-from libeuchre import Game, EuchrePlayer, Round, Trick, Trick_result, EuchreCard
+from libeuchre import Game, EuchrePlayer, Round, Trick, Trick_result, EuchreCard, RoundResult
 
 pygame.init()
 
@@ -449,6 +449,33 @@ class PreroundScreen(Flow):
         self.select_trump_active = False
         self.select_trump_screen = SelectTrumpScreen(self);
         self.preround2_i = 0
+    def reset(self):
+       # meta round
+        self.round_initialized = False
+        self.dealer_rot_i += 1;
+        
+        # round
+        self.player_rot_i = self.dealer_rot_i+1;
+
+        # pickup call round
+        # meta active, prerender
+        self.pickupround_active = True
+        self.preround1_i = 0;
+        self.pickupround_screen = Preround1Screen(self)
+        
+        # dealer pickup?
+        self.pickup_active = False
+        self.pickup_screen = PickupScreen(self)
+        # we don't actually need to know what card the player discarded
+        
+        # trump call round?
+        self.preround2_active = False
+        self.preround2_o = 0;
+        self.preround2_screen = Preround2Screen(self)
+        # will need to parse result of call
+        self.select_trump_active = False
+        self.select_trump_screen = SelectTrumpScreen(self);
+        self.preround2_i = 0
         
     def init__round(self):
         # initialize the round, deck
@@ -457,7 +484,6 @@ class PreroundScreen(Flow):
             self.game.deck.shuffle()
             self.game.round.deal()
             self.dealer_rot_i += 1;
-            print(self.game.players[self.dealer_rot_i].name)
             
         self.round_initialized = True
     
@@ -494,7 +520,6 @@ class PreroundScreen(Flow):
                     self.game.round.turnover_kitty()
                     # pass current dealer index
                     self.player_rot_i = self.game.round.dealer_index+1;
-                    print(self.game.players[self.player_rot_i].name)
                     self.preround2_active = True
                 self.pickupround_active = False   
         if(self.game.round.called_on_round == 1):
@@ -539,10 +564,9 @@ class PreroundScreen(Flow):
             self.select_trump_screen.render()
         if(self.select_trump_screen.alive == False):
             self.select_trump_active = False
-            print(f"trump is {self.game.round.trump}")   
     
     def render(self):
-        
+        print("hello?")
         self.init__round()
         screen.fill((255,255,255))
         
@@ -611,7 +635,7 @@ class PlayerTrickSelectScreen(Flow):
         playerTitle = futura48.render(f"{self.player.name}", True, (0,0,0))
         offsetblit(playerTitle, s, x=(WIDTH/2), y=(self.rel_height/2))
         instructions1 = futura32.render(f"Select a card to play.", True, (0,0,0))
-        offsetblit(instructions1, s, x=(WIDTH/2), y=(self.rel_height/2)+50)
+        offsetblit(instructions1, s, x=(WIDTH/2), y=(self.rel_height/2)+40)
         instructions2 = futura32.render(f"Use arrow keys to select a card, then press enter", True, (0,0,0))
         offsetblit(instructions2, s, x=(WIDTH/2), y=(self.rel_height/2)+75)
         
@@ -688,7 +712,7 @@ class TrickScreen(Flow):
         
         if(self.alive == False):
             return
-        
+        screen.fill((255,255,255))
         ## top half is for trick pile
         # # bottom half (y>211) is for player specific
         handTitle = futura32.render("Trick pile:", True, (0,0,0))
@@ -720,6 +744,17 @@ class RoundScreen(Flow):
         self.trick_screen = TrickScreen(self);
         self.trick_screen.alive = False;
         pass
+    def reset(self):
+        self.alive = True
+        self.card_display = CardDisplay()
+        self.trick_i = 0;
+        # start initially with the player next to dealer
+        self.lead_player_index = None;
+        self.initialized = False
+        
+        self.trick_screen_active = False;
+        self.trick_screen = TrickScreen(self);
+        self.trick_screen.alive = False;
     def initialize(self):
         if(self.initialized == False):
             if(self.trick_screen.result == None):
@@ -741,9 +776,10 @@ class RoundScreen(Flow):
             res: Trick_result = self.trick_screen.result
             winning_player:EuchrePlayer = self.game.round.find_player_by_id(res.id)
             winning_card = res.card
-
+            winning_team = winning_player.team
+            
+            self.game.round.trick_scores[winning_team] += 1
             # every trick one gives an internal score to the corresponding team
-            print(winning_player.team)
             # increase trick by 1
             self.trick_i += 1
             self.lead_player_index = indexOf(winning_player, self.game.players)
@@ -774,9 +810,14 @@ class EndroundScreen(Flow):
     def render(self):
         screen.fill((255,255,255))
         
-        euchreTitle = futura48.render("Euchre Endround", True, (0,0,0))
-        offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
+        res: RoundResult = self.game.round.get_score()
+        self.game.scores[res.winning_team] += res.points
         
+        euchreTitle = futura48.render("Round over", True, (0,0,0))
+        offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
+        winnerSubtitle = futura32.render(f"Team {res.winning_team} wins, gets {res.points} points.", True, (0,0,0))
+        offsetblit(winnerSubtitle, screen, x=(WIDTH/2), y=(HEIGHT/2)+75)
+        # score info later
         playButton = futura64.render("Press Enter to continue", True, (0,50,255))
         offsetblit(playButton, screen, x=(WIDTH/2), y=(HEIGHT/2)+250)
         
@@ -797,7 +838,7 @@ class EndgameScreen(Flow):
     def render(self):
         screen.fill((255,255,255))
         
-        euchreTitle = futura48.render("Euchre Preround", True, (0,0,0))
+        euchreTitle = futura48.render("Game over.", True, (0,0,0))
         offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
         
         playButton = futura64.render("Press Enter to continue", True, (0,50,255))
@@ -808,10 +849,8 @@ class EndgameScreen(Flow):
     def event(self, e):
         if e.type == pygame.KEYDOWN:
             if e.key == pygame.K_RETURN:
-                print("preround 1 exit")
                 self.alive = False
                 return
-
 
 class GameScreen:
     def __init__(self):
@@ -819,9 +858,11 @@ class GameScreen:
         self.sequence = 0;
         self.si = 0;
         self.end_of_sequence = False
-        self.sequences = [[MainScreen(), PlayerSelectScreen(self.game), PregameScreen()], [PreroundScreen(self.game), RoundScreen(self.game), EndroundScreen(self.game)], [EndgameScreen(self.game)]]
-        # self.sequences = [[MainScreen(), PlayerSelectScreen(self.game), PregameScreen()], [PreroundScreen(self.game), EndroundScreen(self.game)], [EndgameScreen(self.game)]]
-
+        self.pregame = [MainScreen(), PlayerSelectScreen(self.game), PregameScreen()]
+        self.round = [PreroundScreen(self.game), RoundScreen(self.game), EndroundScreen(self.game)]
+        self.endgame = [EndgameScreen(self.game)]
+        self.sequences = [self.pregame, self.round, self.endgame]
+        # loop round until game over
         # pregame: menu -> players -> splash
         # game: deal -> preround 1 up to x4 -> maybe preround 2 up to x4 -> trick round x4 -> postround score page
         # postgame: winning teams
