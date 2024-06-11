@@ -817,6 +817,15 @@ class EndroundScreen(Flow):
         offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
         winnerSubtitle = futura32.render(f"Team {res.winning_team} wins, gets {res.points} points.", True, (0,0,0))
         offsetblit(winnerSubtitle, screen, x=(WIDTH/2), y=(HEIGHT/2)+75)
+        
+        teamMessage = f"{self.game.round.caller.name} called trump"
+        if(self.game.round.caller.team != res.winning_team):
+            teamMessage = f"{teamMessage}, and their team was Euchred."
+        else:
+            teamMessage = f"{teamMessage}."
+        
+        teamSubtitle = futura32.render(teamMessage, True, (0,0,0))
+        offsetblit(teamSubtitle, screen, x=(WIDTH/2), y=(HEIGHT/2)+115)
         # score info later
         playButton = futura64.render("Press Enter to continue", True, (0,50,255))
         offsetblit(playButton, screen, x=(WIDTH/2), y=(HEIGHT/2)+250)
