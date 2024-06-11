@@ -1,6 +1,6 @@
 import pygame
 from helpers import flip, findex, indexOf
-from libeuchre import Game, EuchrePlayer, Round, Trick, Trick_result, EuchreCard, RoundResult
+from libeuchre import Game, EuchrePlayer, Round, Trick, Trick_result, EuchreCard, RoundResult, format_suit
 
 pygame.init()
 
@@ -649,9 +649,18 @@ class PlayerTrickSelectScreen(Flow):
         
         self.hand_display.render(s=s)
         
-        leadTitle = futura32.render(f"{self.screen.game.players[self.screen.screen.lead_player_index].name} lead.", True, (0,0,0))
+        leader = self.screen.game.players[self.screen.screen.lead_player_index]
+        leadMessage = f"{leader.name} lead"
+        if(self.player.team == leader.team) and (self.player != leader):
+            leadMessage = f"{leadMessage} (your teammate)."
+        else:
+            leadMessage = f"{leadMessage}."
+            
+        leadTitle = futura32.render(leadMessage, True, (0,0,0))
         s.blit(leadTitle, (WIDTH-leadTitle.get_width(), 0))
         
+        teamScore = futura32.render(f"Your team currently has {self.game.round.trick_scores[self.player.team]} tricks.", True, (0,0,0))
+        s.blit(teamScore, (WIDTH-teamScore.get_width(), self.rel_height-teamScore.get_height()))
         
     def event(self, e):
         self.selectable_display.event(e)
@@ -720,6 +729,9 @@ class TrickScreen(Flow):
         
         self.trick_display.set_cards(self.trick.cards)
         self.trick_display.render()
+        
+        handTitle = futura32.render(f"Trump is {format_suit(self.game.round.trump)}", True, (0,0,0))
+        screen.blit(handTitle, (WIDTH-handTitle.get_width(), 0))
         
         # different layer for player turns
         trick_surf = pygame.surface.Surface((WIDTH, HEIGHT-211))
@@ -818,7 +830,7 @@ class EndroundScreen(Flow):
         winnerSubtitle = futura32.render(f"Team {res.winning_team} wins, gets {res.points} points.", True, (0,0,0))
         offsetblit(winnerSubtitle, screen, x=(WIDTH/2), y=(HEIGHT/2)+75)
         
-        teamMessage = f"{self.game.round.caller.name} called trump"
+        teamMessage = f"{self.game.round.caller.name} (on team {self.game.round.caller.team}) called trump"
         if(self.game.round.caller.team != res.winning_team):
             teamMessage = f"{teamMessage}, and their team was Euchred."
         else:
@@ -861,49 +873,75 @@ class EndgameScreen(Flow):
                 self.alive = False
                 return
 
+
+class Sequence:
+    def __init__(self,screen_sequence, ):
+        self.alive = False
+
+        self.screen_index = 0;
+        # array of Flows
+        self.screen_sequence = screen_sequence
+        self.view: Flow = None
+        self.refresh_view()
+        
+    def start(self):
+        self.alive = True
+    def refresh_view(self):
+        self.view = self.screen_sequence[self.screen_index]
+    def event(self, e):
+        self.view.event(e)
+    def run(self):
+        if(self.view.alive == False):
+            if(self.screen_index+1 > (len(self.screen_sequence)-1)):
+                self.alive = False
+                return
+            else:
+                self.screen_index += 1
+                self.refresh_view()
+        self.view.render()
+            
+
 class GameScreen:
     def __init__(self):
         self.game = Game()
-        self.sequence = 0;
-        self.si = 0;
-        self.end_of_sequence = False
-        self.pregame = [MainScreen(), PlayerSelectScreen(self.game), PregameScreen()]
-        self.round = [PreroundScreen(self.game), RoundScreen(self.game), EndroundScreen(self.game)]
-        self.endgame = [EndgameScreen(self.game)]
+        # 0 is pregame only need once, 1 is round need as many times until win, 2 is endgame only need once
+        self.sequence_active_index = 0;
+        self.sequence: Sequence = None;
+        self.pregame = Sequence([MainScreen(), PlayerSelectScreen(self.game), PregameScreen()])
+        self.round = Sequence([PreroundScreen(self.game), RoundScreen(self.game), EndroundScreen(self.game)])
+        self.endgame = Sequence([EndgameScreen(self.game)])
         self.sequences = [self.pregame, self.round, self.endgame]
         # loop round until game over
         # pregame: menu -> players -> splash
         # game: deal -> preround 1 up to x4 -> maybe preround 2 up to x4 -> trick round x4 -> postround score page
         # postgame: winning teams
-        self.view: Flow = self.sequences[self.sequence][self.si];
+        # self.view: Flow = self.sequences[self.sequence][self.si];
+        self.refresh_sequence()
         pass
+    def refresh_sequence(self):
+        self.sequence = self.sequences[self.sequence_active_index]
+        self.sequence.alive = True
+        
     def start(self):
         running = True
         while running:
-            # progress to next screen in sequence
-            if(self.view.alive == False):
-                if(self.si > len(self.sequences[self.sequence])-1): 
-                    self.end_of_sequence = True
-                    print("end of sequence")
+            if(self.sequence.alive == False):
+                # new sequence
+                if(self.sequence_active_index == 1):
+                    # a round just ended
+                    pass
                 else:
-                    self.end_of_sequence = False
-                    self.view = self.sequences[self.sequence][self.si]
-                self.si += 1;
-            # progress to the next set of screens (new sequence)
-            if(self.end_of_sequence == True):
-                self.si = 0;
-                self.sequence += 1;
-                self.end_of_sequence = False
-                if(self.sequence > len(self.sequences)-1):
-                    print("no more sequences")
-                
+                    self.sequence_active_index+=1
+                self.refresh_sequence();    
                     
             for event in pygame.event.get():
-                # close window if pressed close
-                self.view.event(event)
+                # pass events to the sequence
+                self.sequence.event(event)
+                # close the window when press close
                 if event.type == pygame.QUIT:
                     running = False
-            self.view.render()
+            # render whichever sequence is currently running
+            self.sequence.run()
             pygame.display.flip()
             clock.tick(75)
         else:
