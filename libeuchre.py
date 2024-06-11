@@ -75,17 +75,22 @@ class EuchreHand(Hand):
         if len(preload_cards) > 0:
             for card in preload_cards:
                 self.add_card(card)
-                
-    def find_suit(self, suit, trump):
+    
+    # lead with hearts, jack of diamonds and jcak of hearts showed, spades was trump
+    def find_suit(self, query_suit, trump):
         ofsuit = []     
         for card in self.cards:
             if(card.card == Jack):
                 # skip the jack if it's the left and suit is offsuit, (jack of spades is not a spade when clubs is trump)
-                if(offsuit(trump) == suit):
+                if(offsuit(trump) == query_suit):
                     continue
-                elif(trump ==  suit and card.suit == suit or card.suit == offsuit(trump)):
+                # if trump is the suit we're looking for, the two jacks are trump or left trump
+                elif(trump == query_suit and (card.suit == trump or card.suit == offsuit(trump))):
                     ofsuit.append(card)
-            elif(card.suit == suit):
+                # if trump is not the query, no special treatment
+                elif(trump != query_suit and card.suit == query_suit):
+                    ofsuit.append(card)
+            elif(card.suit == query_suit):
                 ofsuit.append(card)
         return ofsuit
     
