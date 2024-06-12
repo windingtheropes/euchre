@@ -703,8 +703,15 @@ class TrickScreen(Flow):
         self.trick_display.set_cards(self.trick.cards)
         self.trick_display.render()
         
-        handTitle = futura32.render(f"Trump is {format_suit(self.game.round.trump)}", True, (0,0,0))
-        screen.blit(handTitle, (WIDTH-handTitle.get_width(), 0))
+        trumpTitle = futura32.render(f"Trump is {format_suit(self.game.round.trump)}", True, (0,0,0))
+        screen.blit(trumpTitle, (WIDTH-trumpTitle.get_width(), 0))
+        
+        scoresheet = f"{self.game.scores[0]} | {self.game.scores[1]}"
+        scoresTitle = futura32.render("Score", True, (0,0,0))
+        screen.blit(scoresTitle, (WIDTH-scoresTitle.get_width(), +scoresTitle.get_height()))
+        scores = futura32.render(scoresheet, True, (0,0,0))
+        screen.blit(scores, (WIDTH-scoresTitle.get_width(), scoresTitle.get_height()+scores.get_height()))
+        
         
         # different layer for player turns
         trick_surf = pygame.surface.Surface((WIDTH, HEIGHT-211))
