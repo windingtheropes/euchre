@@ -2,7 +2,7 @@
 culminating project for ics3u: recreation of euchre in python. 
 
 # notes
-this game plays and follows all rules that it can given the limited set of features it implements.
+this game plays and follows all rules that it can given the set of features it implements.
 
 ## notes
 automatic players were never implemented.\
