@@ -1,6 +1,7 @@
 import pygame
 from helpers import flip, findex, indexOf
 from libeuchre import Game, EuchrePlayer, Round, Trick, Trick_result, EuchreCard, RoundResult, format_suit
+import random
 
 pygame.init()
 
@@ -121,7 +122,7 @@ class PlayerSelectScreen(Flow):
         screen.blit(euchreTitle, (WIDTH/2-euchreTitle.get_width()/2,HEIGHT/2-euchreTitle.get_height()))
         
         nextButton = futura48.render("Real Player", True, (0,0,0))
-        autoButton = futura48.render("Automatic Player", True, (0,0,0))
+        # autoButton = futura48.render("Automatic Player", True, (0,0,0))
 
         if(self.selectedButton == 1):
             nextButton = futura48.render("Real Player", True, (0,0,0),(0,255,100))
@@ -145,7 +146,7 @@ class PlayerSelectScreen(Flow):
                         self.player+=1
                 else:
                     self.alive = False
-            # if e.key == pygame.K_LEFT or e.key == pygame.K_RIGHT:
+            # if (e.key == pygame.K_LEFT or e.key == pygame.K_RIGHT):
             #     self.selectedButton = flip(self.selectedButton)
 class PregameScreen(Flow):
     def __init__(self):
@@ -168,19 +169,22 @@ class PregameScreen(Flow):
                 return
 
 class EnterSplash(Flow):
-    def __init__(self, text=""):
+    def __init__(self, text="", size=(WIDTH, HEIGHT), loc=(0,0)):
         self.text = text;
+        self.width, self.height = size
+        self.loc = loc
         self.alive = True
         
-    def render(self):
-        screen.fill((255,255,255))
+    def render(self, s=screen):
+        window = pygame.surface.Surface((self.width, self.height))
+        window.fill((255,255,255))
         
         euchreTitle = futura48.render(self.text, True, (0,0,0))
-        offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
+        offsetblit(euchreTitle, window, x=(self.width/2), y=(self.height/2))
         
         playButton = futura64.render("Press Enter to continue", True, (0,50,255))
-        offsetblit(playButton, screen, x=(WIDTH/2), y=(HEIGHT/2)+250)
-        
+        offsetblit(playButton, window, x=(self.width/2), y=(self.height/2)+250)
+        s.blit(window, self.loc)
     def event(self, e):
         if e.type == pygame.KEYDOWN:
             if e.key == pygame.K_RETURN:
@@ -192,14 +196,26 @@ class Preround1Screen(Flow):
         self.screen = screen
         self.alive = True
         self.result = None;
+        self.player: EuchrePlayer = None;
         # 1 is call 0 is pass
         self.selectedButton = 0;
         self.kitty_display = CardDisplay((0, HEIGHT/2))
         self.hand_display = CardDisplay((0,50))
+        self.initialized = False;
+    def initialize(self):
+        if(self.initialized == True):
+            return
+        else:
+            self.player = self.screen.game.players[findex(self.screen.player_rot_i, self.screen.game.players)]
+            # self.splash = EnterSplash(f"{self.player.name}'s turn.", (WIDTH, HEIGHT))
+
     def render(self):
-        player = self.screen.game.players[findex(self.screen.player_rot_i, self.screen.game.players)]
-        
-        euchreTitle = futura48.render(f"{player.name}", True, (0,0,0))
+        self.initialize();
+        # player = self.screen.game.players[findex(self.screen.player_rot_i, self.screen.game.players)]
+        # if(self.splash.alive == True):
+        #     self.splash.render()
+        # else:
+        euchreTitle = futura48.render(f"{self.player.name}", True, (0,0,0))
         offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
         instructions = futura32.render(f"Use arrow keys to select, then press enter", True, (0,0,0))
         offsetblit(instructions, screen, x=(WIDTH/2), y=(HEIGHT/2)+50)
@@ -214,7 +230,7 @@ class Preround1Screen(Flow):
         handTitle = futura32.render("Your hand", True, (0,0,0))
         screen.blit(handTitle, (0, 0))
         
-        self.hand_display.set_cards(player.hand.cards)
+        self.hand_display.set_cards(self.player.hand.cards)
         self.hand_display.render()
         
         handTitle = futura32.render(f"{self.screen.game.round.dealer.name} dealt.", True, (0,0,0))
@@ -228,10 +244,12 @@ class Preround1Screen(Flow):
         elif(self.selectedButton == 0):
             passButton = futura48.render("Pass", True, (0,0,0),(0,255,100))
         
-        
         screen.blit(passButton, (WIDTH-passButton.get_width(), HEIGHT-passButton.get_height()))
         screen.blit(callButton, (0, HEIGHT-callButton.get_height()))
     def event(self, e):
+        # if(self.splash.alive == True):
+        #     self.splash.event(e)
+        # else:
         if e.type == pygame.KEYDOWN:
             if e.key == pygame.K_LEFT or e.key == pygame.K_RIGHT:
                 self.selectedButton = flip(self.selectedButton)
@@ -240,10 +258,12 @@ class Preround1Screen(Flow):
                     # pass
                     self.alive = False
                     self.result = 0
+                    self.initialized = False;
                 elif self.selectedButton == 1:
                     # call to pickup
                     self.alive = False;
                     self.result = 1
+                    self.initialized = False
                  
 class PickupScreen(Flow):
     def __init__(self, screen):
@@ -254,12 +274,14 @@ class PickupScreen(Flow):
         self.player: EuchrePlayer = None;
         self.hand_display = CardDisplay((0,50), selectable=True)
         self.kitty_display = CardDisplay((0, HEIGHT/2))
+        self.splash = None;
         # 1 is call 0 is pass
         self.initialized = False
         self.selectedButton = 0;
         
     def initialize(self):
         self.player = self.game.round.dealer
+        self.splash = EnterSplash(f"{self.player.name}'s turn.", (WIDTH, HEIGHT))
         self.kitty_display.set_cards([self.game.round.kitty.cards[0]])
         self.hand_display.set_cards(self.player.hand.cards)
         
@@ -267,35 +289,40 @@ class PickupScreen(Flow):
         if(self.initialized == False):
             self.initialize()
             self.initialized = True
-    
-        euchreTitle = futura48.render(f"{self.player.name}", True, (0,0,0))
-        offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
-        instructions1 = futura32.render(f"Picking up {self.game.round.kitty.cards[0].format()}. Must discard a card.", True, (0,0,0))
-        offsetblit(instructions1, screen, x=(WIDTH/2), y=(HEIGHT/2)+50)
-        instructions2 = futura32.render(f"Use arrow keys to select a discard, then press enter", True, (0,0,0))
-        offsetblit(instructions2, screen, x=(WIDTH/2), y=(HEIGHT/2)+100)
-        
-        kittyTitle = futura32.render("Kitty", True, (0,0,0))
-        screen.blit(kittyTitle, (0, (HEIGHT/2)-50))
-        
-        
-        self.kitty_display.render()
-        
-        handTitle = futura32.render("Your hand:", True, (0,0,0))
-        screen.blit(handTitle, (0, 0))
-        
-        self.hand_display.render()
-        
-        handTitle = futura32.render(f"{self.game.round.dealer.name} dealt.", True, (0,0,0))
-        screen.blit(handTitle, (WIDTH-handTitle.get_width(), 0))
+        if(self.splash.alive == True):
+            self.splash.render()
+        else:
+            euchreTitle = futura48.render(f"{self.player.name}", True, (0,0,0))
+            offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
+            instructions1 = futura32.render(f"Picking up {self.game.round.kitty.cards[0].format()}. Must discard a card.", True, (0,0,0))
+            offsetblit(instructions1, screen, x=(WIDTH/2), y=(HEIGHT/2)+50)
+            instructions2 = futura32.render(f"Use arrow keys to select a discard, then press enter", True, (0,0,0))
+            offsetblit(instructions2, screen, x=(WIDTH/2), y=(HEIGHT/2)+100)
+            
+            kittyTitle = futura32.render("Kitty", True, (0,0,0))
+            screen.blit(kittyTitle, (0, (HEIGHT/2)-50))
+            
+            
+            self.kitty_display.render()
+            
+            handTitle = futura32.render("Your hand:", True, (0,0,0))
+            screen.blit(handTitle, (0, 0))
+            
+            self.hand_display.render()
+            
+            handTitle = futura32.render(f"{self.game.round.dealer.name} dealt.", True, (0,0,0))
+            screen.blit(handTitle, (WIDTH-handTitle.get_width(), 0))
         
         
     def event(self, e):
-        self.hand_display.event(e)
-        if(e.type == pygame.KEYDOWN):
-            if(e.key == pygame.K_RETURN):
-                self.game.round.pickup(self.game.round.dealer.hand.cards[self.hand_display.selected])
-                self.alive = False
+        if(self.splash.alive == True):
+            self.splash.event(e)
+        else:
+            self.hand_display.event(e)
+            if(e.type == pygame.KEYDOWN):
+                if(e.key == pygame.K_RETURN):
+                    self.game.round.pickup(self.game.round.dealer.hand.cards[self.hand_display.selected])
+                    self.alive = False
                 
 class SelectTrumpScreen(Flow):
     def __init__(self, screen):
@@ -313,46 +340,48 @@ class SelectTrumpScreen(Flow):
         
     def initialize(self):
         self.player = self.game.players[indexOf(self.game.round.caller, self.game.players)]
-        print(self.game.round.caller.name)
+        self.splash = EnterSplash(f"{self.player.name}'s turn.", (WIDTH, HEIGHT))
         self.choices_display.set_cards(self.game.round.callable_suits(as_cards=True))
         self.hand_display.set_cards(self.player.hand.cards)
         
     def render(self):
-        # don't know why i have to do this
-        # if(self.alive == False):
-        #     return
         if(self.initialized == False):
             self.initialize()
             self.initialized = True
-    
-        euchreTitle = futura48.render(f"{self.player.name}", True, (0,0,0))
-        offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
-        instructions1 = futura32.render(f"Calling trump.", True, (0,0,0))
-        offsetblit(instructions1, screen, x=(WIDTH/2), y=(HEIGHT/2)+50)
-        instructions2 = futura32.render(f"Use arrow keys to select a suit, then press enter", True, (0,0,0))
-        offsetblit(instructions2, screen, x=(WIDTH/2), y=(HEIGHT/2)+100)
-        
-        kittyTitle = futura32.render("Options", True, (0,0,0))
-        screen.blit(kittyTitle, (0, (HEIGHT/2)-50))
-        
-        
-        self.choices_display.render()
-        
-        handTitle = futura32.render("Your hand:", True, (0,0,0))
-        screen.blit(handTitle, (0, 0))
-        
-        self.hand_display.render()
-        
-        handTitle = futura32.render(f"{self.game.round.dealer.name} dealt.", True, (0,0,0))
-        screen.blit(handTitle, (WIDTH-handTitle.get_width(), 0))
+        if(self.splash.alive == True):
+            self.splash.render()
+        else:
+            euchreTitle = futura48.render(f"{self.player.name}", True, (0,0,0))
+            offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
+            instructions1 = futura32.render(f"Calling trump.", True, (0,0,0))
+            offsetblit(instructions1, screen, x=(WIDTH/2), y=(HEIGHT/2)+50)
+            instructions2 = futura32.render(f"Use arrow keys to select a suit, then press enter", True, (0,0,0))
+            offsetblit(instructions2, screen, x=(WIDTH/2), y=(HEIGHT/2)+100)
+            
+            kittyTitle = futura32.render("Options", True, (0,0,0))
+            screen.blit(kittyTitle, (0, (HEIGHT/2)-50))
+            
+            
+            self.choices_display.render()
+            
+            handTitle = futura32.render("Your hand:", True, (0,0,0))
+            screen.blit(handTitle, (0, 0))
+            
+            self.hand_display.render()
+            
+            handTitle = futura32.render(f"{self.game.round.dealer.name} dealt.", True, (0,0,0))
+            screen.blit(handTitle, (WIDTH-handTitle.get_width(), 0))
         
         
     def event(self, e):
-        self.choices_display.event(e)
-        if(e.type == pygame.KEYDOWN):
-            if(e.key == pygame.K_RETURN):
-                self.game.round.pr2_select_suit(self.choices_display.cards[self.choices_display.selected].suit) 
-                self.alive = False
+        if(self.splash.alive == True):
+            self.splash.event(e)
+        else:
+            self.choices_display.event(e)
+            if(e.type == pygame.KEYDOWN):
+                if(e.key == pygame.K_RETURN):
+                    self.game.round.pr2_select_suit(self.choices_display.cards[self.choices_display.selected].suit) 
+                    self.alive = False
  
 class Preround2Screen(Flow):
     def __init__(self, screen):
@@ -580,6 +609,7 @@ class PlayerTrickSelectScreen(Flow):
         # 1 is call 0 is pass
         self.initialized = False
         self.rel_height = HEIGHT -211
+        self.splash = None;
     def reset(self):
         self.initialized = False
         self.player = None
@@ -588,6 +618,7 @@ class PlayerTrickSelectScreen(Flow):
         
     def initialize(self):
         self.player = self.game.players[findex(self.screen.player_turn_i+self.screen.screen.lead_player_index, self.game.players)]
+        self.splash = EnterSplash(f"{self.player.name}'s turn.", (WIDTH, self.rel_height))
         # leader can play any card
         if(self.screen.player_turn_i == 0):
             self.selectable_display.set_cards(self.player.hand.cards)
@@ -605,47 +636,53 @@ class PlayerTrickSelectScreen(Flow):
         if(self.initialized == False):
             self.initialize()
             self.initialized = True
-    
-        playerTitle = futura48.render(f"{self.player.name}", True, (0,0,0))
-        offsetblit(playerTitle, s, x=(WIDTH/2), y=(self.rel_height/2))
-        instructions1 = futura32.render(f"Select a card to play.", True, (0,0,0))
-        offsetblit(instructions1, s, x=(WIDTH/2), y=(self.rel_height/2)+40)
-        instructions2 = futura32.render(f"Use arrow keys to select a card, then press enter", True, (0,0,0))
-        offsetblit(instructions2, s, x=(WIDTH/2), y=(self.rel_height/2)+75)
-        
-        selectableTitle = futura32.render("Selectable Cards", True, (0,0,0))
-        s.blit(selectableTitle, (0, (HEIGHT/2)-50))
-        
-        self.selectable_display.render(s=s)
-        
-        handTitle = futura32.render("Your hand:", True, (0,0,0))
-        s.blit(handTitle, (0, 0))
-        
-        self.hand_display.render(s=s)
-        
-        leader = self.screen.game.players[findex(self.screen.screen.lead_player_index, self.screen.game.players)]
-        leadMessage = f"{leader.name} lead"
-        if(self.player.team == leader.team) and (self.player != leader):
-            leadMessage = f"{leadMessage} (your teammate)."
-        else:
-            leadMessage = f"{leadMessage}."
             
-        leadTitle = futura32.render(leadMessage, True, (0,0,0))
-        s.blit(leadTitle, (WIDTH-leadTitle.get_width(), 0))
-        
-        teamScore = futura32.render(f"Your team currently has {self.game.round.trick_scores[self.player.team]} tricks.", True, (0,0,0))
-        s.blit(teamScore, (WIDTH-teamScore.get_width(), self.rel_height-teamScore.get_height()))
-        
+        if(self.splash.alive == True):
+            self.splash.render(s=s)
+        else:
+            playerTitle = futura48.render(f"{self.player.name}", True, (0,0,0))
+            offsetblit(playerTitle, s, x=(WIDTH/2), y=(self.rel_height/2))
+            instructions1 = futura32.render(f"Select a card to play.", True, (0,0,0))
+            offsetblit(instructions1, s, x=(WIDTH/2), y=(self.rel_height/2)+40)
+            instructions2 = futura32.render(f"Use arrow keys to select a card, then press enter", True, (0,0,0))
+            offsetblit(instructions2, s, x=(WIDTH/2), y=(self.rel_height/2)+75)
+            
+            selectableTitle = futura32.render("Selectable Cards", True, (0,0,0))
+            s.blit(selectableTitle, (0, (HEIGHT/2)-50))
+            
+            self.selectable_display.render(s=s)
+            
+            handTitle = futura32.render("Your hand:", True, (0,0,0))
+            s.blit(handTitle, (0, 0))
+            
+            self.hand_display.render(s=s)
+            
+            leader = self.screen.game.players[findex(self.screen.screen.lead_player_index, self.screen.game.players)]
+            leadMessage = f"{leader.name} lead"
+            if(self.player.team == leader.team) and (self.player != leader):
+                leadMessage = f"{leadMessage} (your teammate)."
+            else:
+                leadMessage = f"{leadMessage}."
+                
+            leadTitle = futura32.render(leadMessage, True, (0,0,0))
+            s.blit(leadTitle, (WIDTH-leadTitle.get_width(), 0))
+            
+            teamScore = futura32.render(f"Your team currently has {self.game.round.trick_scores[self.player.team]} tricks.", True, (0,0,0))
+            s.blit(teamScore, (WIDTH-teamScore.get_width(), self.rel_height-teamScore.get_height()))
+            
     def event(self, e):
-        self.selectable_display.event(e)
-        if(e.type == pygame.KEYDOWN):
-            if(e.key == pygame.K_RETURN):
-                # add the card to the trick pile
-                selected_card = self.player.hand.cards[indexOf(self.selectable_display.cards[self.selectable_display.selected], self.player.hand.cards)]
-                self.screen.trick.add_card(selected_card, self.player)
-                self.player.hand.remove_card(selected_card)
-                self.alive = False
-                self.initialized= False
+        if(self.splash.alive == True):
+            self.splash.event(e)
+        else:
+            self.selectable_display.event(e)
+            if(e.type == pygame.KEYDOWN):
+                if(e.key == pygame.K_RETURN):
+                    # add the card to the trick pile
+                    selected_card = self.player.hand.cards[indexOf(self.selectable_display.cards[self.selectable_display.selected], self.player.hand.cards)]
+                    self.screen.trick.add_card(selected_card, self.player)
+                    self.player.hand.remove_card(selected_card)
+                    self.alive = False
+                    self.initialized= False
         
 class TrickScreen(Flow):
     def __init__(self, screen):
