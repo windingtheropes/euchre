@@ -20,35 +20,33 @@ jobs:
           pip install -r src/requirements.txt
       - name: Run PyInstaller
         run: |
-          python -m PyInstaller src/game.py
-      - name: dist to zip
-        run: |
-          powershell Compress-Archive -Path %cd%\dist\game.exe,%cd%\img -DestinationPath %cd%\dist\euchre.zip
-      # - uses: actions/upload-artifact@v2
-      #   with:
-      #     name: Windows_qwiklabs
-      #     path: dist/qwiklab_badge_checker.exe
+          python -m PyInstaller src/game.spec
+     
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Windows_qwiklabs
+          path: dist/qwiklab_badge_checker.exe
 
-      # - name: create release
-      #   id: create_release
-      #   uses: actions/create-release@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     tag_name: ${{ github.event.head_commit.message }}
-      #     release_name: ${{ github.event.head_commit.message }}
-      #     overwrite: true
-      #     body: |
-      #       Test Release v1.0.0
-      #     draft: false
-      #     prerelease: false
-      # - name: Upload Release Asset
-      #   id: upload-release-asset
-      #   uses: actions/upload-release-asset@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     upload_url: ${{steps.create_release.outputs.upload_url}}
-      #     asset_path: dist/qwiklab_badge_checker.exe
-      #     asset_name: Qwiklab-Badge-Checker-Windows-amd64.exe
-      #     asset_content_type: application/zip
+      - name: create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.event.head_commit.message }}
+          release_name: ${{ github.event.head_commit.message }}
+          overwrite: true
+          body: |
+            Test Release v1.0.0
+          draft: false
+          prerelease: false
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{steps.create_release.outputs.upload_url}}
+          asset_path: dist/game.exe
+          asset_name: euchre-Windows-amd64.exe
+          asset_content_type: application/zip
