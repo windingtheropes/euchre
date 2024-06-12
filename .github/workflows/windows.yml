@@ -21,13 +21,10 @@ jobs:
       - name: Run PyInstaller
         run: |
           python -m PyInstaller --add-data "src/img;img" src/game.py
-      - name: test
-        run: | 
-          ls dist
       - uses: actions/upload-artifact@v2
         with:
           name: Euchre_windows
-          path: dist/game.exe
+          path: dist/game
 
       - name: create release
         id: create_release
@@ -49,6 +46,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{steps.create_release.outputs.upload_url}}
-          asset_path: dist/game.exe
+          asset_path: dist/game
           asset_name: euchre-Windows-amd64.exe
           asset_content_type: application/zip
