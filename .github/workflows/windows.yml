@@ -23,8 +23,7 @@ jobs:
           python -m PyInstaller src/game.py
       - name: dist to zip
         run: |
-          Compress-Archive -Path .\dist\game.exe,.\img -DestinationPath dist\euchre.zip
-        shell: powershell
+          powershell Compress-Archive -Path %cd%\dist\game.exe,%cd%\img -DestinationPath %cd%\dist\euchre.zip
       # - uses: actions/upload-artifact@v2
       #   with:
       #     name: Windows_qwiklabs
