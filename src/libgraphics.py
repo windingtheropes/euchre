@@ -100,6 +100,7 @@ class MainScreen(Flow):
                 self.alive = False
                 return
 
+# player select; automatic players were never implemented
 class PlayerSelectScreen(Flow):
     def __init__(self, game):
         self.alive = True
@@ -124,12 +125,12 @@ class PlayerSelectScreen(Flow):
 
         if(self.selectedButton == 1):
             nextButton = futura48.render("Real Player", True, (0,0,0),(0,255,100))
-        elif(self.selectedButton == 0):
-            autoButton = futura48.render("Automatic Player", True, (0,0,0),(0,255,100))
+        # elif(self.selectedButton == 0):
+        #     autoButton = futura48.render("Automatic Player", True, (0,0,0),(0,255,100))
         
         
         screen.blit(nextButton, (WIDTH-nextButton.get_width(), HEIGHT-nextButton.get_height()))
-        screen.blit(autoButton, (0, HEIGHT-autoButton.get_height()))
+        # screen.blit(autoButton, (0, HEIGHT-autoButton.get_height()))
        
     def event(self, e):
         if e.type == pygame.KEYDOWN:
@@ -144,8 +145,8 @@ class PlayerSelectScreen(Flow):
                         self.player+=1
                 else:
                     self.alive = False
-            if e.key == pygame.K_LEFT or e.key == pygame.K_RIGHT:
-                self.selectedButton = flip(self.selectedButton)
+            # if e.key == pygame.K_LEFT or e.key == pygame.K_RIGHT:
+            #     self.selectedButton = flip(self.selectedButton)
 class PregameScreen(Flow):
     def __init__(self):
         self.alive = True
