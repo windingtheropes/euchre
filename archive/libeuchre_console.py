@@ -1,8 +1,7 @@
 # libeuchre by Jack Anderson
 # a python library for euchre game functions.
-# THIS VERSION RUNS ENTIRELY CONSOLE BASED AND FOLLOWS ALL RULES. AS A BACKUP AND EXAMPLE
+# this library was built to follow euchre rules, (note from the future: this version doesn't), and runs completely in the console. used for reference.
 
-# todo: figure out why cards are double dealing.
 from libcards import Hand, Deck, Player, Card, Ace, Jack, Queen, King, Clubs, Diamonds, Hearts, Spades
 from helpers import sinput, finput, flip, clear, indexOf, findex, urand, fiinput
 from random import randint
