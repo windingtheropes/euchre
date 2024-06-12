@@ -17,7 +17,7 @@ jobs:
           architecture: 'x64'
       - name: Install requirements
         run: |
-          pip install -r requirements.txt
+          pip install -r src/requirements.txt
       - name: Run PyInstaller
         run: |
           python -m PyInstaller --specfile src/euchre.spec --onefile src/game.py
