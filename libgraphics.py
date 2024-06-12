@@ -803,10 +803,10 @@ class EndroundScreen(Flow):
             
         euchreTitle = futura48.render("Round over", True, (0,0,0))
         offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
-        winnerSubtitle = futura32.render(f"Team {res.winning_team} wins, gets {res.points} points.", True, (0,0,0))
+        winnerSubtitle = futura32.render(f"Team {res.winning_team+1} wins, gets {res.points} points.", True, (0,0,0))
         offsetblit(winnerSubtitle, screen, x=(WIDTH/2), y=(HEIGHT/2)+75)
         
-        teamMessage = f"{self.game.round.caller.name} (on team {self.game.round.caller.team}) called trump"
+        teamMessage = f"{self.game.round.caller.name} (on team {self.game.round.caller.team+1}) called trump"
         if(self.game.round.caller.team != res.winning_team):
             teamMessage = f"{teamMessage}, and their team was Euchred."
         else:
@@ -839,7 +839,7 @@ class EndgameScreen(Flow):
         
         euchreTitle = futura48.render("Game over.", True, (0,0,0))
         offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
-        teamSubtitle = futura48.render(f"Team {winning_team} wins, {self.game.scores[winning_team]} - {self.game.scores[flip(winning_team)]}", True, (0,0,0))
+        teamSubtitle = futura48.render(f"Team {winning_team+1} wins, {self.game.scores[winning_team]} - {self.game.scores[flip(winning_team)]}", True, (0,0,0))
         offsetblit(teamSubtitle, screen, x=(WIDTH/2), y=(HEIGHT/2)-teamSubtitle.get_height())
         
         playButton = futura64.render("Press Enter to continue", True, (0,50,255))
