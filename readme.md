@@ -1,12 +1,10 @@
 # euchre by jack anderson | ICS3U
 culminating project for ics3u: recreation of euchre in python. 
 
-# roadmap
-write text based\
-make asynchronous (more functions)\
-add pygame
+# notes
+this game plays and follows all rules that it can given the limited set of features it implements.
 
-## pygame screen sequences 
-pregame: menu -> players -> splash\
-game: deal -> preround 1 up to x4 -> maybe preround 2 up to x4 -> trick round x4 -> postround score page\
-postgame: winning team\
+## notes
+automatic players were never implemented.\
+; 4 players must play, and their hands are not hidden from each other\
+no calling alone
