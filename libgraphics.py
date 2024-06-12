@@ -834,8 +834,13 @@ class EndgameScreen(Flow):
     def render(self):
         screen.fill((255,255,255))
         
+        winning_team = self.game.check_win()[1]
+        
+        
         euchreTitle = futura48.render("Game over.", True, (0,0,0))
         offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
+        teamSubtitle = futura48.render(f"Team {winning_team} wins, {self.game.scores[winning_team]} - {self.game.scores[flip(winning_team)]}", True, (0,0,0))
+        offsetblit(teamSubtitle, screen, x=(WIDTH/2), y=(HEIGHT/2)-teamSubtitle.get_height())
         
         playButton = futura64.render("Press Enter to continue", True, (0,50,255))
         offsetblit(playButton, screen, x=(WIDTH/2), y=(HEIGHT/2)+250)
