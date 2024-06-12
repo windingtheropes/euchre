@@ -20,7 +20,7 @@ jobs:
           pip install -r src/requirements.txt
       - name: Run PyInstaller
         run: |
-          pyinstaller --onefile src/game.spec
+          python -m PyInstaller src/game.spec
      
       - uses: actions/upload-artifact@v2
         with:
