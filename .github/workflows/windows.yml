@@ -7,6 +7,7 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
+    environment: production
     steps:
       - name: Checkout
         uses: actions/checkout@v1
@@ -30,7 +31,7 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
           tag_name: ${{ github.event.head_commit.message }}
           release_name: ${{ github.event.head_commit.message }}
