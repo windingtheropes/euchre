@@ -21,6 +21,13 @@ jobs:
       - name: Run PyInstaller
         run: |
           python -m PyInstaller src/game.py
+      - name: Copy img to dist
+        run: |
+          Xcopy img dist /E /H /C /I
+      - name: dist to zip
+        run: |
+          Compress-Archive -Path dist -DestinationPath dist/euchre.zip
+        shell: powershell
       # - uses: actions/upload-artifact@v2
       #   with:
       #     name: Windows_qwiklabs
