@@ -81,13 +81,13 @@ class EuchreHand(Hand):
         for card in self.cards:
             if(card.card == Jack):
                 # skip the jack if it's the left and suit is offsuit, (jack of spades is not a spade when clubs is trump)
-                if(offsuit(trump) == query_suit):
+                if(query_suit == offsuit(trump)):
                     continue
                 # if trump is the suit we're looking for, the two jacks are trump or left trump
-                elif(trump == query_suit and (card.suit == trump or card.suit == offsuit(trump))):
+                elif(query_suit == trump and (card.suit == trump or card.suit == offsuit(trump))):
                     ofsuit.append(card)
                 # if trump is not the query, no special treatment
-                elif(trump != query_suit and card.suit == query_suit):
+                elif(trump != query_suit and offsuit(trump) != query_suit and card.suit == query_suit):
                     ofsuit.append(card)
             elif(card.suit == query_suit):
                 ofsuit.append(card)
