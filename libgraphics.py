@@ -137,7 +137,7 @@ class PlayerSelectScreen(Flow):
                 if(self.player <= 4):
                     controlled = self.selectedButton == 1
                     self.game.add_player(EuchrePlayer(name=f"Player {self.player}",controlled=controlled))
-                    print(f"player {self.player} added")
+                    print(f"Player {self.player} added")
                     if(self.player+1 > 4):
                         self.alive = False
                     else: 
@@ -425,7 +425,7 @@ class PreroundScreen(Flow):
         
         # meta round
         self.round_initialized = False
-        self.dealer_rot_i = 0;
+        self.dealer_rot_i = self.game.dealer_index;
         
         # round
         self.player_rot_i = self.dealer_rot_i+1;
@@ -450,33 +450,7 @@ class PreroundScreen(Flow):
         self.select_trump_screen = SelectTrumpScreen(self);
         self.preround2_i = 0
     def reset(self):
-       # meta round
-        self.round_initialized = False
-        self.dealer_rot_i += 1;
-        
-        # round
-        self.player_rot_i = self.dealer_rot_i+1;
-
-        # pickup call round
-        # meta active, prerender
-        self.pickupround_active = True
-        self.preround1_i = 0;
-        self.pickupround_screen = Preround1Screen(self)
-        
-        # dealer pickup?
-        self.pickup_active = False
-        self.pickup_screen = PickupScreen(self)
-        # we don't actually need to know what card the player discarded
-        
-        # trump call round?
-        self.preround2_active = False
-        self.preround2_o = 0;
-        self.preround2_screen = Preround2Screen(self)
-        # will need to parse result of call
-        self.select_trump_active = False
-        self.select_trump_screen = SelectTrumpScreen(self);
-        self.preround2_i = 0
-        
+        self.__init__(self.game)
     def init__round(self):
         # initialize the round, deck
         if self.round_initialized == False:
@@ -566,7 +540,6 @@ class PreroundScreen(Flow):
             self.select_trump_active = False
     
     def render(self):
-        print("hello?")
         self.init__round()
         screen.fill((255,255,255))
         
@@ -649,7 +622,7 @@ class PlayerTrickSelectScreen(Flow):
         
         self.hand_display.render(s=s)
         
-        leader = self.screen.game.players[self.screen.screen.lead_player_index]
+        leader = self.screen.game.players[findex(self.screen.screen.lead_player_index, self.screen.game.players)]
         leadMessage = f"{leader.name} lead"
         if(self.player.team == leader.team) and (self.player != leader):
             leadMessage = f"{leadMessage} (your teammate)."
@@ -757,16 +730,7 @@ class RoundScreen(Flow):
         self.trick_screen.alive = False;
         pass
     def reset(self):
-        self.alive = True
-        self.card_display = CardDisplay()
-        self.trick_i = 0;
-        # start initially with the player next to dealer
-        self.lead_player_index = None;
-        self.initialized = False
-        
-        self.trick_screen_active = False;
-        self.trick_screen = TrickScreen(self);
-        self.trick_screen.alive = False;
+        self.__init__(self.game)
     def initialize(self):
         if(self.initialized == False):
             if(self.trick_screen.result == None):
@@ -817,14 +781,19 @@ class RoundScreen(Flow):
 class EndroundScreen(Flow):
     def __init__(self, game):
         self.game: Game = game;
+        self.points_given = False;
         self.alive = True
-        
+    def reset(self):
+        self.__init__(self.game)    
     def render(self):
         screen.fill((255,255,255))
         
         res: RoundResult = self.game.round.get_score()
-        self.game.scores[res.winning_team] += res.points
-        
+
+        if(self.points_given == False):
+            self.game.scores[res.winning_team] += res.points
+            self.points_given = True
+            
         euchreTitle = futura48.render("Round over", True, (0,0,0))
         offsetblit(euchreTitle, screen, x=(WIDTH/2), y=(HEIGHT/2))
         winnerSubtitle = futura32.render(f"Team {res.winning_team} wins, gets {res.points} points.", True, (0,0,0))
@@ -847,7 +816,6 @@ class EndroundScreen(Flow):
     def event(self, e):
         if e.type == pygame.KEYDOWN:
             if e.key == pygame.K_RETURN:
-                print("preround 1 exit")
                 self.alive = False
                 return
 class EndgameScreen(Flow):
@@ -875,7 +843,7 @@ class EndgameScreen(Flow):
 
 
 class Sequence:
-    def __init__(self,screen_sequence, ):
+    def __init__(self,screen_sequence):
         self.alive = False
 
         self.screen_index = 0;
@@ -883,7 +851,10 @@ class Sequence:
         self.screen_sequence = screen_sequence
         self.view: Flow = None
         self.refresh_view()
-        
+    def reset(self):
+        for sequence in self.screen_sequence:
+            sequence.reset()
+            self.__init__(self.screen_sequence)
     def start(self):
         self.alive = True
     def refresh_view(self):
@@ -915,13 +886,19 @@ class GameScreen:
         # pregame: menu -> players -> splash
         # game: deal -> preround 1 up to x4 -> maybe preround 2 up to x4 -> trick round x4 -> postround score page
         # postgame: winning teams
-        # self.view: Flow = self.sequences[self.sequence][self.si];
         self.refresh_sequence()
-        pass
+    def refresh_round(self):
+        self.game.round = None;
+        self.round = Sequence([PreroundScreen(self.game), RoundScreen(self.game), EndroundScreen(self.game)]);
+        
     def refresh_sequence(self):
         self.sequence = self.sequences[self.sequence_active_index]
         self.sequence.alive = True
-        
+    def end_of_sequence(self):
+        if(self.sequence_active_index+1 > (len(self.sequences)-1)):
+            return True
+        else:
+            return False
     def start(self):
         running = True
         while running:
@@ -929,9 +906,26 @@ class GameScreen:
                 # new sequence
                 if(self.sequence_active_index == 1):
                     # a round just ended
-                    pass
+                    # if the score is less than 10 on either team, continue the game
+                    wincheck = self.game.check_win()
+                    if(wincheck[0] == False):
+                        # nobody has won yet, so reset the round
+                        # relinquish cards
+                        self.game.round.postround();
+                        self.game.round = None     
+                                           
+                        self.game.dealer_index+=1
+                        self.sequence.reset()
+                        self.refresh_sequence()
+                    elif(wincheck[0] == True):
+                        #a team has won
+                        if not self.end_of_sequence():
+                            self.sequence_active_index += 1
                 else:
-                    self.sequence_active_index+=1
+                    if not self.end_of_sequence():
+                        self.sequence_active_index += 1
+                    else:
+                        running = False;
                 self.refresh_sequence();    
                     
             for event in pygame.event.get():
