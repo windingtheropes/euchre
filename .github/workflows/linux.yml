@@ -21,4 +21,4 @@ jobs:
         run: python -c "import sys; print(sys.version)"
       - name: deploy the stuff
         run: pip install pyinstaller
-        run: pyinstaller --distpath macdist/ --onefile game.py
+        run: pyinstaller --distpath linuxdist/ --onefile game.py
