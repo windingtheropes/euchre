@@ -17,4 +17,4 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: deploy the stuff
-        run: pip install pyinstaller && pyinstaller --distpath windist/ --onefile game.py
+        run: pip install pyinstaller pywin32-ctypes && pyinstaller --distpath windist/ --onefile game.py
