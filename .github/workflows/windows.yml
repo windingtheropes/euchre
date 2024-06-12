@@ -23,7 +23,7 @@ jobs:
           python -m PyInstaller --add-data "src/img;img" src/game.py
       - name: test
         run: | 
-          ls 
+          ls dist
       - uses: actions/upload-artifact@v2
         with:
           name: Euchre_windows
