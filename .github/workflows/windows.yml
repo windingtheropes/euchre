@@ -20,7 +20,7 @@ jobs:
           pip install -r src/requirements.txt
       - name: Run PyInstaller
         run: |
-          python -m PyInstaller --specpath src/game.spec src/game.py
+          python -m PyInstaller src/game.py
       # - uses: actions/upload-artifact@v2
       #   with:
       #     name: Windows_qwiklabs
