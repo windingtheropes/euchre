@@ -5,6 +5,7 @@ a = Analysis(
     ['game.py'],
     pathex=[],
     binaries=[],
+    Tree("../img", prefix="img")
     datas=[],
     hiddenimports=[],
     hookspath=[],
